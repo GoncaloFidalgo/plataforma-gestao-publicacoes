@@ -181,6 +181,20 @@ public class PublicacaoService {
         return filename.substring(filename.lastIndexOf("."));
     }
 
+    @GET
+    @Path("/")
+    public List<PublicacaoDTO> search(
+            @QueryParam("tags") String tags,
+            @QueryParam("titulo") String titulo,
+            @QueryParam("autor") String autor,
+            @QueryParam("area") String area,
+            @QueryParam("uploader") String uploader,
+            @QueryParam("hidden") Boolean hidden
+    ) {
+        return publicacaoBean.findAll(tags, titulo, autor, area, uploader, hidden).stream()
+                .map(PublicacaoDTO::from)
+                .collect(java.util.stream.Collectors.toList());
+    }
 
 
     private String getFormData(Map<String, List<InputPart>> formDataMap, String key) {

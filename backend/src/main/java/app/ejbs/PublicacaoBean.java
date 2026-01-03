@@ -30,5 +30,40 @@ public class PublicacaoBean {
     public Publicacao find(Long id) {
         return entityManager.find(Publicacao.class, id);
     }
+
+    public java.util.List<Publicacao> findAll(String tags, String titulo, String autor, String areaCientifica, String uploader, Boolean hidden) {
+        StringBuilder jpql = new StringBuilder("SELECT p FROM Publicacao p WHERE 1=1");
+
+        if (tags != null && !tags.isBlank()) {
+            jpql.append(" AND LOWER(p.tags) LIKE LOWER(:tags)");
+        }
+        if (titulo != null && !titulo.isBlank()) {
+            jpql.append(" AND LOWER(p.titulo) LIKE LOWER(:titulo)");
+        }
+        if (autor != null && !autor.isBlank()) {
+            jpql.append(" AND LOWER(p.autor) LIKE LOWER(:autor)");
+        }
+        if (areaCientifica != null && !areaCientifica.isBlank()) {
+            jpql.append(" AND LOWER(p.areaCientifica) LIKE LOWER(:areaCientifica)");
+        }
+        if (uploader != null && !uploader.isBlank()) {
+            jpql.append(" AND LOWER(p.createdByName) LIKE LOWER(:uploader)");
+        }
+        if (hidden != null) {
+            jpql.append(" AND p.hidden = :hidden");
+        }
+
+        var query = entityManager.createQuery(jpql.toString(), Publicacao.class);
+
+        if (tags != null && !tags.isBlank()) query.setParameter("tags", "%" + tags + "%");
+        if (titulo != null && !titulo.isBlank()) query.setParameter("titulo", "%" + titulo + "%");
+        if (autor != null && !autor.isBlank()) query.setParameter("autor", "%" + autor + "%");
+        if (areaCientifica != null && !areaCientifica.isBlank()) query.setParameter("areaCientifica", "%" + areaCientifica + "%");
+        if (uploader != null && !uploader.isBlank()) query.setParameter("uploader", "%" + uploader + "%");
+        if (hidden != null) query.setParameter("hidden", hidden);
+
+        return query.getResultList();
+    }
+
 }
 
