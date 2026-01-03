@@ -87,7 +87,6 @@ public class PublicacaoService {
 
             Map<String, Object> metadata = parseMetadata(metadataJson);
             String titulo = (String) metadata.get("titulo");
-            String tipo = (String) metadata.get("tipo");
             List<String> autores = (List<String>) metadata.get("autores");
             String areaCientifica = (String) metadata.get("area_cientifica");
             String descricao = (String) metadata.get("descricao");
@@ -194,6 +193,87 @@ public class PublicacaoService {
         return publicacaoBean.findAll(tags, titulo, autor, area, uploader, hidden).stream()
                 .map(PublicacaoDTO::from)
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+
+    @PUT
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updatePublication(@PathParam("id") Long id, Map<String, Object> payload) {
+        try {
+            String titulo = (String) payload.get("titulo");
+            String areaCientifica = (String) payload.get("area_cientifica");
+            String descricao = (String) payload.get("descricao");
+            String resumo = (String) payload.get("resumo");
+            String tags = (String) payload.get("tags");
+            Boolean hidden = payload.get("hidden") != null ? (Boolean) payload.get("hidden") : null;
+
+            Object autorRaw = payload.get("autor");
+            String autor = null;
+
+            if (autorRaw instanceof String) {
+                autor = (String) autorRaw;
+            } else if (autorRaw instanceof List) {
+                List<?> lista = (List<?>) autorRaw;
+                if (!lista.isEmpty()) {
+                    autor = lista.stream()
+                            .map(Object::toString)
+                            .collect(java.util.stream.Collectors.joining(", "));
+                }
+            }
+
+            var publicacao = publicacaoBean.update(
+                    id,
+                    titulo,
+                    autor,
+                    areaCientifica,
+                    descricao,
+                    resumo,
+                    tags,
+                    hidden
+            );
+
+            if (publicacao == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("{\"mensagem\": \"Publicação não encontrada\"}")
+                        .build();
+            }
+
+            return Response.ok(PublicacaoDTO.from(publicacao)).build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"mensagem\": \"Erro ao processar o pedido\"}")
+                    .build();
+        }
+    }
+
+
+    @DELETE
+    @Path("/{id}")
+    public Response delete(@PathParam("id") Long id) {
+        var publicacao = publicacaoBean.find(id);
+        if (publicacao == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        try {
+            publicacaoBean.delete(id);
+
+            if (publicacao.getFile() != null && !publicacao.getFile().isBlank()) {
+                java.nio.file.Path filePath = java.nio.file.Paths.get(UPLOAD_DIR, publicacao.getFile());
+                java.nio.file.Files.deleteIfExists(filePath);
+            }
+
+            return Response.status(Response.Status.NO_CONTENT).build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"mensagem\": \"Erro ao apagar publicação\"}")
+                    .build();
+        }
     }
 
 

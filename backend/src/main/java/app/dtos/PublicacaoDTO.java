@@ -25,8 +25,6 @@ public class PublicacaoDTO implements Serializable {
     private String comentarios;
     private String historicoEdicoes;
     private String tags;
-    private String tipo;
-    private List<String> autores;
 
     public PublicacaoDTO() {
     }
@@ -170,20 +168,6 @@ public class PublicacaoDTO implements Serializable {
         this.tags = tags;
     }
 
-    public String getTipo() {
-        return tipo;
-    }
 
-    public void setTipo(String tipo) {
-        this.tipo = tipo;
-    }
-
-    public List<String> getAutores() {
-        return autores;
-    }
-
-    public void setAutores(List<String> autores) {
-        this.autores = autores;
-    }
 }
 

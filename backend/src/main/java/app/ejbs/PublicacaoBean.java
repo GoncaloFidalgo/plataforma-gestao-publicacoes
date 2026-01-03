@@ -65,5 +65,48 @@ public class PublicacaoBean {
         return query.getResultList();
     }
 
+    public Publicacao update(Long id, String titulo, String autor, String areaCientifica, String descricao, String resumo, String tags, Boolean hidden) {
+        var publicacao = entityManager.find(Publicacao.class, id);
+
+        if (publicacao == null) {
+            return null;
+        }
+
+        // Verifica cada campo. Se não for nulo, atualiza.
+        if (titulo != null && !titulo.isBlank()) {
+            publicacao.setTitulo(titulo);
+        }
+        if (autor != null && !autor.isBlank()) {
+            publicacao.setAutor(autor);
+        }
+        if (areaCientifica != null && !areaCientifica.isBlank()) {
+            publicacao.setAreaCientifica(areaCientifica);
+        }
+        if (descricao != null && !descricao.isBlank()) {
+            publicacao.setDescricao(descricao);
+        }
+        if (resumo != null && !resumo.isBlank()) {
+            publicacao.setResumo(resumo);
+        }
+        if (tags != null && !tags.isBlank()) {
+            publicacao.setTags(tags);
+        }
+        if (hidden != null) {
+            publicacao.setHidden(hidden);
+        }
+
+
+        entityManager.flush();
+        return publicacao;
+    }
+
+    public void delete(Long id) {
+        var publicacao = entityManager.find(Publicacao.class, id);
+        if (publicacao != null) {
+            entityManager.remove(publicacao);
+        } else {
+            throw new RuntimeException("Publicação não encontrada");
+        }
+    }
 }
 
