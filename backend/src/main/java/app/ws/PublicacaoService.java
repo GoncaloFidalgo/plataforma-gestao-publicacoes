@@ -129,6 +129,8 @@ public class PublicacaoService {
         }
     }
 
+
+    //TODO FALTA SO DEIXAR FAZER ISTO OS RESPONSAVEIS.
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -145,6 +147,41 @@ public class PublicacaoService {
 
         return Response.ok(dto).build();
     }
+
+
+    @GET
+    @Path("/{id}/ficheiro")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public Response downloadFile(@PathParam("id") Long id) {
+        var publicacao = publicacaoBean.find(id);
+        if (publicacao == null || publicacao.getFile() == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Publicação ou ficheiro não encontrado")
+                    .build();
+        }
+
+        java.nio.file.Path filePath = java.nio.file.Paths.get(UPLOAD_DIR, publicacao.getFile());
+        java.io.File file = filePath.toFile();
+
+        if (!file.exists()) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Ficheiro físico não encontrado no servidor")
+                    .build();
+        }
+
+        String niceFilename = "documento_" + id + getExtension(publicacao.getFile());
+
+        return Response.ok(file)
+                .header("Content-Disposition", "attachment; filename=\"" + niceFilename + "\"")
+                .build();
+    }
+
+    private String getExtension(String filename) {
+        if (filename == null || !filename.contains(".")) return ".pdf";
+        return filename.substring(filename.lastIndexOf("."));
+    }
+
+
 
     private String getFormData(Map<String, List<InputPart>> formDataMap, String key) {
         List<InputPart> parts = formDataMap.get(key);
