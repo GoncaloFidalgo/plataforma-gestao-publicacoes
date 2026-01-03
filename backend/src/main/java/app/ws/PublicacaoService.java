@@ -129,6 +129,23 @@ public class PublicacaoService {
         }
     }
 
+    @GET
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getPublicacao(@PathParam("id") Long id) {
+        var publicacao = publicacaoBean.find(id);
+
+        if (publicacao == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("{\"mensagem\": \"Publicação não encontrada\"}")
+                    .build();
+        }
+
+        var dto = PublicacaoDTO.from(publicacao);
+
+        return Response.ok(dto).build();
+    }
+
     private String getFormData(Map<String, List<InputPart>> formDataMap, String key) {
         List<InputPart> parts = formDataMap.get(key);
         if (parts == null || parts.isEmpty()) {
