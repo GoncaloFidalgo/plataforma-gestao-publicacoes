@@ -2,12 +2,18 @@
 GET http://localhost:8080/academics/api/administrators
 Accept: application/json
 
-### REQUEST JWT TOKEN
-POST http://localhost:8080/academics/api/auth/login
+### LOGIN - Get JWT Token (Use this first!)
+POST http://localhost:8080/plataforma/api/auth/login
 Content-Type: application/json
 Accept: application/json
 
-{ "username": "admin", "password": "123" }
+{
+  "username": "admin",
+  "password": "123"
+}
+
+# Response will be a JWT token string like: "eyJhbGciOiJIUzM4NCJ9..."
+# Copy this token and use it in the Authorization header for other requests
 
 ### Get authenticated user (replace <JWT_TOKEN> with the token returned above)
 GET http://localhost:8080/academics/api/auth/user
@@ -130,6 +136,34 @@ Content-Type: application/json
 GET http://localhost:8080/academics/api/students
 Accept: application/json
 Authorization: Bearer <eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbjEiLCJpYXQiOjE3NjIzOTM0MDYsImV4cCI6MTc2MjM5NzAwNn0.TgbasV_mzErHD_aIUfdKwR-wJ3_XMI0lCzIlhNjkBhglHC-h5xjr8n0yQoWmzg3z>
+
+### Upload Publication (EP29) - POST /plataforma/api/plataforma/publications
+# STEP 1: First login above to get a JWT token
+# STEP 2: Copy the token from the login response
+# STEP 3: Use this request with the token
+
+POST http://localhost:8080/plataforma/api/plataforma/publications
+Authorization: Bearer <PASTE_YOUR_JWT_TOKEN_HERE>
+Content-Type: multipart/form-data
+
+# POSTMAN INSTRUCTIONS:
+# 1. Go to Body tab
+# 2. Select "form-data" (not raw or x-www-form-urlencoded)
+# 3. Add two keys:
+#    - Key: "file" | Type: File | Value: Select a PDF or ZIP file
+#    - Key: "metadata" | Type: Text | Value: Paste the JSON below
+#
+# Metadata JSON to paste:
+# {
+#   "titulo": "artigo de investigação linguística",
+#   "tipo": "artigo_cientifico",
+#   "autores": ["Investigador, X.", "Colaborador, Y."],
+#   "area_cientifica": "linguas",
+#   "descricao": "Investigação sobre a língua francesa",
+#   "file": "abc.pdf",
+#   "hidden": false,
+#   "tags": {}
+# }
 
 
 

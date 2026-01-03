@@ -12,7 +12,7 @@ services:
     ports:
       - "2525:25"
   webserver:
-    build: ../../Downloads/docker-wildfly-postgres-smtp/docker-wildfly-postgres-smtp
+    build: .
     ports:
       - "8080:8080"
       - "9990:9990"
