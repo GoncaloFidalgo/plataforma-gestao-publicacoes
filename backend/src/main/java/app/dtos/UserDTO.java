@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class UserDTO implements Serializable {
-    private Long id;
     private String username;
     private String name;
     private String password;
@@ -20,8 +19,7 @@ public class UserDTO implements Serializable {
     public UserDTO() {
     }
 
-    public UserDTO(Long id, String username, String name, String email, Integer role, Boolean active, String roleType) {
-        this.id = id;
+    public UserDTO( String username, String name, String email, Integer role, Boolean active, String roleType) {
         this.username = username;
         this.name = name;
         this.email = email;
@@ -32,7 +30,6 @@ public class UserDTO implements Serializable {
 
     public static UserDTO from(User user) {
         return new UserDTO(
-                null, // Se precisar de ID, adicione à entidade User
                 user.getUsername(),
                 user.getName(),
                 user.getEmail(),
@@ -59,9 +56,6 @@ public class UserDTO implements Serializable {
     //region setters
 
 
-    public void setId(Long id) {
-        this.id = id;
-    }
 
     public void setPassword(String password) {
         this.password = password;
@@ -94,10 +88,6 @@ public class UserDTO implements Serializable {
     //endregion
     //region getters
 
-
-    public Long getId() {
-        return id;
-    }
 
     public String getPassword() {
         return password;
