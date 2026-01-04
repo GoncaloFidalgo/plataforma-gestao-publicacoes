@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -33,7 +35,7 @@ public class Tag implements Serializable {
 
     // Relação inversa com Publicações
     @ManyToMany(mappedBy = "tags")
-    private Set<Publicacao> publicacoes = new HashSet<>();
+    private List<Publicacao> publicacoes = new ArrayList<>();
 
     // Relação com Utilizadores (Subscritores)
     @ManyToMany
@@ -72,8 +74,8 @@ public class Tag implements Serializable {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public Set<Publicacao> getPublicacoes() { return publicacoes; }
-    public void setPublicacoes(Set<Publicacao> publicacoes) { this.publicacoes = publicacoes; }
+    public List<Publicacao> getPublicacoes() { return publicacoes; }
+    public void setPublicacoes(List<Publicacao> publicacoes) { this.publicacoes = publicacoes; }
 
     public Set<User> getSubscribers() { return subscribers; }
     public void setSubscribers(Set<User> subscribers) { this.subscribers = subscribers; }
