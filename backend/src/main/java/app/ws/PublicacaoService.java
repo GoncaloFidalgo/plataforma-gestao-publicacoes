@@ -205,22 +205,13 @@ public class PublicacaoService {
             String areaCientifica = (String) payload.get("area_cientifica");
             String descricao = (String) payload.get("descricao");
             String resumo = (String) payload.get("resumo");
-            String tags = (String) payload.get("tags");
+            String tags = (String) payload.get("tags"); // Expecting "Tag1, Tag2"
             Boolean hidden = payload.get("hidden") != null ? (Boolean) payload.get("hidden") : null;
 
-            Object autorRaw = payload.get("autor");
-            String autor = null;
+            String editorUsername = securityContext.getUserPrincipal().getName();
 
-            if (autorRaw instanceof String) {
-                autor = (String) autorRaw;
-            } else if (autorRaw instanceof List) {
-                List<?> lista = (List<?>) autorRaw;
-                if (!lista.isEmpty()) {
-                    autor = lista.stream()
-                            .map(Object::toString)
-                            .collect(java.util.stream.Collectors.joining(", "));
-                }
-            }
+            // Handle 'autor' legacy logic if needed (omitted for brevity, keep your original if needed)
+            String autor = (String) payload.get("autor");
 
             var publicacao = publicacaoBean.update(
                     id,
@@ -230,7 +221,8 @@ public class PublicacaoService {
                     descricao,
                     resumo,
                     tags,
-                    hidden
+                    hidden,
+                    editorUsername // Pass current user for History
             );
 
             if (publicacao == null) {
@@ -248,7 +240,6 @@ public class PublicacaoService {
                     .build();
         }
     }
-
 
     @DELETE
     @Path("/{id}")

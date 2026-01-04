@@ -5,6 +5,10 @@ import jakarta.validation.constraints.NotBlank;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "publicacoes")
@@ -17,7 +21,7 @@ public class Publicacao implements Serializable {
     @NotBlank
     private String titulo;
 
-    private String autor;
+    private String autor; // Kept as original (could be migrated to User later if needed)
 
     private String areaCientifica;
 
@@ -30,6 +34,7 @@ public class Publicacao implements Serializable {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    // Kept purely for historical record of who uploaded it originally
     @Column(name = "created_by")
     private String createdBy;
 
@@ -38,17 +43,24 @@ public class Publicacao implements Serializable {
 
     private Boolean hidden = false;
 
-    @Column(columnDefinition = "TEXT")
-    private String ratings = "{}";
+    // --- New Relationships ---
 
-    @Column(columnDefinition = "TEXT")
-    private String comentarios = "{}";
+    @OneToMany(mappedBy = "publicacao", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Rating> ratings = new ArrayList<>();
 
-    @Column(name = "historico_edicoes", columnDefinition = "TEXT")
-    private String historicoEdicoes = "{}";
+    @OneToMany(mappedBy = "publicacao", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comentario> comentarios = new ArrayList<>();
 
-    @Column(columnDefinition = "TEXT")
-    private String tags = "{}";
+    @OneToMany(mappedBy = "publicacao", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<HistoricoEdicao> historicoEdicoes = new ArrayList<>();
+
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "publicacao_tags",
+            joinColumns = @JoinColumn(name = "publicacao_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags = new HashSet<>();
 
     public Publicacao() {
     }
@@ -66,124 +78,71 @@ public class Publicacao implements Serializable {
         this.hidden = false;
     }
 
-    public Long getId() {
-        return id;
+
+    public void addComentario(Comentario comentario) {
+        comentarios.add(comentario);
+        comentario.setPublicacao(this);
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void addRating(Rating rating) {
+        ratings.add(rating);
+        rating.setPublicacao(this);
     }
 
-    public String getTitulo() {
-        return titulo;
+    public void addTag(Tag tag) {
+        tags.add(tag);
+        tag.getPublicacoes().add(this);
     }
 
-    public void setTitulo(String titulo) {
-        this.titulo = titulo;
+    public void removeTag(Tag tag) {
+        tags.remove(tag);
+        tag.getPublicacoes().remove(this);
     }
 
-    public String getAutor() {
-        return autor;
-    }
+    // Getters and Setters
 
-    public void setAutor(String autor) {
-        this.autor = autor;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public String getAreaCientifica() {
-        return areaCientifica;
-    }
+    public String getTitulo() { return titulo; }
+    public void setTitulo(String titulo) { this.titulo = titulo; }
 
-    public void setAreaCientifica(String areaCientifica) {
-        this.areaCientifica = areaCientifica;
-    }
+    public String getAutor() { return autor; }
+    public void setAutor(String autor) { this.autor = autor; }
 
-    public String getDescricao() {
-        return descricao;
-    }
+    public String getAreaCientifica() { return areaCientifica; }
+    public void setAreaCientifica(String areaCientifica) { this.areaCientifica = areaCientifica; }
 
-    public void setDescricao(String descricao) {
-        this.descricao = descricao;
-    }
+    public String getDescricao() { return descricao; }
+    public void setDescricao(String descricao) { this.descricao = descricao; }
 
-    public String getFile() {
-        return file;
-    }
+    public String getFile() { return file; }
+    public void setFile(String file) { this.file = file; }
 
-    public void setFile(String file) {
-        this.file = file;
-    }
+    public String getResumo() { return resumo; }
+    public void setResumo(String resumo) { this.resumo = resumo; }
 
-    public String getResumo() {
-        return resumo;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public void setResumo(String resumo) {
-        this.resumo = resumo;
-    }
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public String getCreatedByName() { return createdByName; }
+    public void setCreatedByName(String createdByName) { this.createdByName = createdByName; }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    public Boolean getHidden() { return hidden; }
+    public void setHidden(Boolean hidden) { this.hidden = hidden; }
 
-    public String getCreatedBy() {
-        return createdBy;
-    }
+    public List<Rating> getRatings() { return ratings; }
+    public void setRatings(List<Rating> ratings) { this.ratings = ratings; }
 
-    public void setCreatedBy(String createdBy) {
-        this.createdBy = createdBy;
-    }
+    public List<Comentario> getComentarios() { return comentarios; }
+    public void setComentarios(List<Comentario> comentarios) { this.comentarios = comentarios; }
 
-    public String getCreatedByName() {
-        return createdByName;
-    }
+    public List<HistoricoEdicao> getHistoricoEdicoes() { return historicoEdicoes; }
+    public void setHistoricoEdicoes(List<HistoricoEdicao> historicoEdicoes) { this.historicoEdicoes = historicoEdicoes; }
 
-    public void setCreatedByName(String createdByName) {
-        this.createdByName = createdByName;
-    }
-
-    public Boolean getHidden() {
-        return hidden;
-    }
-
-    public void setHidden(Boolean hidden) {
-        this.hidden = hidden;
-    }
-
-    public String getRatings() {
-        return ratings;
-    }
-
-    public void setRatings(String ratings) {
-        this.ratings = ratings;
-    }
-
-    public String getComentarios() {
-        return comentarios;
-    }
-
-    public void setComentarios(String comentarios) {
-        this.comentarios = comentarios;
-    }
-
-    public String getHistoricoEdicoes() {
-        return historicoEdicoes;
-    }
-
-    public void setHistoricoEdicoes(String historicoEdicoes) {
-        this.historicoEdicoes = historicoEdicoes;
-    }
-
-    public String getTags() {
-        return tags;
-    }
-
-    public void setTags(String tags) {
-        this.tags = tags;
-    }
+    public Set<Tag> getTags() { return tags; }
+    public void setTags(Set<Tag> tags) { this.tags = tags; }
 }
-

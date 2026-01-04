@@ -1,14 +1,15 @@
 package app.ejbs;
 
-import app.entities.Publicacao;
-import app.entities.User;
+import app.entities.*;
 import app.exceptions.MyConstraintViolationException;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.validation.ConstraintViolationException;
 
-import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Stateless
 public class PublicacaoBean {
@@ -20,7 +21,6 @@ public class PublicacaoBean {
         try {
             Publicacao publicacao = new Publicacao(titulo, autor, areaCientifica, descricao, file, resumo, createdBy, createdByName);
             entityManager.persist(publicacao);
-            entityManager.flush();
             return publicacao;
         } catch (ConstraintViolationException e) {
             throw new MyConstraintViolationException(e);
@@ -28,14 +28,21 @@ public class PublicacaoBean {
     }
 
     public Publicacao find(Long id) {
-        return entityManager.find(Publicacao.class, id);
+        Publicacao p = entityManager.find(Publicacao.class, id);
+        if (p != null) {
+            p.getTags().size();
+            p.getComentarios().size();
+            p.getRatings().size();
+            p.getHistoricoEdicoes().size();
+        }
+        return p;
     }
 
-    public java.util.List<Publicacao> findAll(String tags, String titulo, String autor, String areaCientifica, String uploader, Boolean hidden) {
-        StringBuilder jpql = new StringBuilder("SELECT p FROM Publicacao p WHERE 1=1");
+    public List<Publicacao> findAll(String tag, String titulo, String autor, String areaCientifica, String uploader, Boolean hidden) {
+        StringBuilder jpql = new StringBuilder("SELECT DISTINCT p FROM Publicacao p LEFT JOIN p.tags t WHERE 1=1");
 
-        if (tags != null && !tags.isBlank()) {
-            jpql.append(" AND LOWER(p.tags) LIKE LOWER(:tags)");
+        if (tag != null && !tag.isBlank()) {
+            jpql.append(" AND LOWER(t.name) LIKE LOWER(:tag)");
         }
         if (titulo != null && !titulo.isBlank()) {
             jpql.append(" AND LOWER(p.titulo) LIKE LOWER(:titulo)");
@@ -55,58 +62,87 @@ public class PublicacaoBean {
 
         var query = entityManager.createQuery(jpql.toString(), Publicacao.class);
 
-        if (tags != null && !tags.isBlank()) query.setParameter("tags", "%" + tags + "%");
+        if (tag != null && !tag.isBlank()) query.setParameter("tag", "%" + tag + "%");
         if (titulo != null && !titulo.isBlank()) query.setParameter("titulo", "%" + titulo + "%");
         if (autor != null && !autor.isBlank()) query.setParameter("autor", "%" + autor + "%");
         if (areaCientifica != null && !areaCientifica.isBlank()) query.setParameter("areaCientifica", "%" + areaCientifica + "%");
         if (uploader != null && !uploader.isBlank()) query.setParameter("uploader", "%" + uploader + "%");
         if (hidden != null) query.setParameter("hidden", hidden);
 
-        return query.getResultList();
+        List<Publicacao> results = query.getResultList();
+
+        // FORCE LOAD collections for the search results too
+        for (Publicacao p : results) {
+            p.getTags().size();
+            p.getComentarios().size();
+            p.getRatings().size();
+            p.getHistoricoEdicoes().size();
+        }
+
+        return results;
     }
 
-    public Publicacao update(Long id, String titulo, String autor, String areaCientifica, String descricao, String resumo, String tags, Boolean hidden) {
+    public Publicacao update(Long id, String titulo, String autor, String areaCientifica, String descricao, String resumo, String tagsStr, Boolean hidden, String editorUsername) {
         var publicacao = entityManager.find(Publicacao.class, id);
+        if (publicacao == null) return null;
 
-        if (publicacao == null) {
-            return null;
+        User editor = entityManager.find(User.class, editorUsername);
+
+        if (titulo != null) publicacao.setTitulo(titulo);
+        if (autor != null) publicacao.setAutor(autor);
+        if (areaCientifica != null) publicacao.setAreaCientifica(areaCientifica);
+        if (descricao != null) publicacao.setDescricao(descricao);
+        if (resumo != null) publicacao.setResumo(resumo);
+        if (hidden != null) publicacao.setHidden(hidden);
+
+        // Handle Tags
+        if (tagsStr != null && !tagsStr.isBlank()) {
+            Set<Tag> newTags = new HashSet<>();
+            String[] tagNames = tagsStr.split(",");
+            for (String tagName : tagNames) {
+                String trimmedName = tagName.trim();
+                if (!trimmedName.isEmpty()) {
+                    List<Tag> existingTags = entityManager.createQuery("SELECT t FROM Tag t WHERE t.name = :name", Tag.class)
+                            .setParameter("name", trimmedName)
+                            .getResultList();
+
+                    if (existingTags.isEmpty()) {
+                        Tag newTag = new Tag(trimmedName);
+                        entityManager.persist(newTag);
+                        newTags.add(newTag);
+                    } else {
+                        newTags.add(existingTags.get(0));
+                    }
+                }
+            }
+            publicacao.setTags(newTags);
         }
 
-        // Verifica cada campo. Se não for nulo, atualiza.
-        if (titulo != null && !titulo.isBlank()) {
-            publicacao.setTitulo(titulo);
-        }
-        if (autor != null && !autor.isBlank()) {
-            publicacao.setAutor(autor);
-        }
-        if (areaCientifica != null && !areaCientifica.isBlank()) {
-            publicacao.setAreaCientifica(areaCientifica);
-        }
-        if (descricao != null && !descricao.isBlank()) {
-            publicacao.setDescricao(descricao);
-        }
-        if (resumo != null && !resumo.isBlank()) {
-            publicacao.setResumo(resumo);
-        }
-        if (tags != null && !tags.isBlank()) {
-            publicacao.setTags(tags);
-        }
-        if (hidden != null) {
-            publicacao.setHidden(hidden);
-        }
-
+        // Add history entry
+        HistoricoEdicao history = new HistoricoEdicao("Update details", editor, publicacao);
+        publicacao.getHistoricoEdicoes().add(history);
 
         entityManager.flush();
+
+        publicacao.getTags().size();
+        publicacao.getComentarios().size();
+        publicacao.getRatings().size();
+        publicacao.getHistoricoEdicoes().size();
+
         return publicacao;
     }
 
+    // Optional: Add Comment method if you implement it later
+//    public void addComment(Long publicacaoId, String username, String text) {
+//        Publicacao p = entityManager.find(Publicacao.class, publicacaoId);
+//        User u = entityManager.find(User.class, username);
+//        if (p != null && u != null) {
+//            p.addComentario(new Comentario(text, u, p));
+//        }
+//    }
+
     public void delete(Long id) {
         var publicacao = entityManager.find(Publicacao.class, id);
-        if (publicacao != null) {
-            entityManager.remove(publicacao);
-        } else {
-            throw new RuntimeException("Publicação não encontrada");
-        }
+        if (publicacao != null) entityManager.remove(publicacao);
     }
 }
-
