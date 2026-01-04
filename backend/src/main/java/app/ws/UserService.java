@@ -89,12 +89,6 @@ public class UserService {
         }
     }
     //endregion
-    @GET
-    @Path("/")
-    public List<UserDTO> getAllUsers() {
-        return UserDTO.from(userBean.findAll());
-    }
-    //endregion
 
     //region PUT
     @PUT

@@ -1,6 +1,6 @@
 services:
   db:
-    image: bitnamilegacy/postgresql
+    image: bitnami/postgresql
     ports:
       - "5432:5432"
     environment:
