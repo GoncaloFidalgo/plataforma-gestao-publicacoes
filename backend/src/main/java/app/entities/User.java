@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Table(name = "users")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 
-public class User implements Serializable {
+public class User extends Versionable implements Serializable {
 
     @Id
     private String username;
