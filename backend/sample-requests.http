@@ -12,7 +12,7 @@ Accept: application/json
 ### Get authenticated user (replace <JWT_TOKEN> with the token returned above)
 GET http://localhost:8080/academics/api/auth/user
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1MjMzNCwiZXhwIjoxNzY3NDU1OTM0fQ.qvflgzxJ-iMRjUgFOx_s4qOSIfRRP5vV0ZsRvTTCyQb40JuMvcWNhEipVoivubqO
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
 
 
 
@@ -53,8 +53,7 @@ Content-Type: application/json
 ### Create User (Administrator only)
 POST http://localhost:8080/academics/api/users
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1MjMzNCwiZXhwIjoxNzY3NDU1OTM0fQ.qvflgzxJ-iMRjUgFOx_s4qOSIfRRP5vV0ZsRvTTCyQb40JuMvcWNhEipVoivubqO
-
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
 
 
 {
@@ -70,7 +69,7 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1M
 ### Update User (Administrator only)
 PUT http://localhost:8080/academics/api/users/joao
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1MjMzNCwiZXhwIjoxNzY3NDU1OTM0fQ.qvflgzxJ-iMRjUgFOx_s4qOSIfRRP5vV0ZsRvTTCyQb40JuMvcWNhEipVoivubqO
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
 
 
 
@@ -81,67 +80,49 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1M
 }
 
 
+### Delete User (Administrator only)
+DELETE http://localhost:8080/academics/api/users/joao
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1MjMzNCwiZXhwIjoxNzY3NDU1OTM0fQ.qvflgzxJ-iMRjUgFOx_s4qOSIfRRP5vV0ZsRvTTCyQb40JuMvcWNhEipVoivubqO
 
-
-### Create A New Student
-POST http://localhost:8080/academics/api/students
+### Suspend User (Administrator only)
+PATCH http://localhost:8080/academics/api/users/joao/status
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
 
 {
-  "email": "johndoe@mail.com",
-  "name": "John Doe",
-  "username": "john",
-  "password": "jd",
-  "courseCode": 1
+  "active": false,
+  "motive": "Violação das políticas de utilização"
 }
 
-### Get All Courses
-GET http://localhost:8080/academics/api/courses
-Accept: application/json
-
-### Create A New Course
-POST http://localhost:8080/academics/api/courses
+### Activate User (Administrator only)
+PATCH http://localhost:8080/academics/api/users/joao/status
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
 
 {
-  "code": 3,
-  "name": "TAES"
+  "active": true
 }
 
-### Get A Single Student
-GET http://localhost:8080/academics/api/students/buro
-Accept: application/json
-
-### Get Student Subjects
-GET http://localhost:8080/academics/api/students/buro/subjects
-Accept: application/json
-
-
-### Alternative (.http file)
-POST http://localhost:8080/academics/api/students/buro/email
+### Update User Role (Administrator only)
+PATCH http://localhost:8080/academics/api/users/joao/role
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
+
 
 {
-  "subject": "Test subject",
-  "body": "This is a test email body."
+  "role": 2
 }
 
-
-
-### GET ALL STUDENTS
-GET http://localhost:8080/academics/api/students
+### Get All Users (Administrator only)
+GET http://localhost:8080/academics/api/users
 Accept: application/json
-Authorization: Bearer <eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbjEiLCJpYXQiOjE3NjIzOTM0MDYsImV4cCI6MTc2MjM5NzAwNn0.TgbasV_mzErHD_aIUfdKwR-wJ3_XMI0lCzIlhNjkBhglHC-h5xjr8n0yQoWmzg3z>
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
 
 
-
-
-
-
-
-
-
-
+### Get User by Username (Administrator only)
+GET http://localhost:8080/academics/api/users/joao
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
 
 
 
