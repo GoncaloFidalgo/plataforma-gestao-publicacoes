@@ -1,5 +1,19 @@
 <template>
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
+  <div>
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
+  </div>
 </template>
+<script setup>
+import {useAuthStore} from "~/stores/auth.js";
+import {useAPIStore} from "~/stores/api.js";
+
+const authStore = useAuthStore()
+const apiStore = useAPIStore()
+
+
+if (apiStore.token && !authStore.currentUser) {
+  await authStore.getUser()
+}
+</script>
