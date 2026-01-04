@@ -18,7 +18,8 @@ Accept: application/json
 ### Get authenticated user (replace <JWT_TOKEN> with the token returned above)
 GET http://localhost:8080/academics/api/auth/user
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzMwNDg3MSwiZXhwIjoxNzY3MzA4NDcxfQ.j1SZ6typCIwYRI_RlyQH853Jq4WKqpWtvECHN5T9UjAi4B5G97u6UIeHBw1AOybI
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1MjMzNCwiZXhwIjoxNzY3NDU1OTM0fQ.qvflgzxJ-iMRjUgFOx_s4qOSIfRRP5vV0ZsRvTTCyQb40JuMvcWNhEipVoivubqO
+
 
 
 ### refresh token
@@ -58,7 +59,8 @@ Content-Type: application/json
 ### Create User (Administrator only)
 POST http://localhost:8080/academics/api/users
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzM1MDY0OSwiZXhwIjoxNzY3MzU0MjQ5fQ.4-8zG2v596iO9pbsDyzTL0Ukjlwp0xZ2uBED5e_-ARlAgl0c1MoFiKF1Z-OKc8TQ
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1MjMzNCwiZXhwIjoxNzY3NDU1OTM0fQ.qvflgzxJ-iMRjUgFOx_s4qOSIfRRP5vV0ZsRvTTCyQb40JuMvcWNhEipVoivubqO
+
 
 
 {
@@ -74,7 +76,8 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzM1M
 ### Update User (Administrator only)
 PUT http://localhost:8080/academics/api/users/joao
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzM1MDY0OSwiZXhwIjoxNzY3MzU0MjQ5fQ.4-8zG2v596iO9pbsDyzTL0Ukjlwp0xZ2uBED5e_-ARlAgl0c1MoFiKF1Z-OKc8TQ
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1MjMzNCwiZXhwIjoxNzY3NDU1OTM0fQ.qvflgzxJ-iMRjUgFOx_s4qOSIfRRP5vV0ZsRvTTCyQb40JuMvcWNhEipVoivubqO
+
 
 
 {
@@ -82,7 +85,6 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzM1M
   "email": "joao.silva@gmail.com",
   "active": false
 }
-
 
 
 

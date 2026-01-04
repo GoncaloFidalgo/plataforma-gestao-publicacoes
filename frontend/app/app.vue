@@ -1,15 +1,19 @@
 <template>
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
+  <div>
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
+  </div>
 </template>
-
 <script setup>
-import { onMounted } from 'vue'
-import { useAuthStore } from '/pages/stores/auth-store'
+import {useAuthStore} from "~/stores/auth.js";
+import {useAPIStore} from "~/stores/api.js";
 
-onMounted(() => {
-  const authStore = useAuthStore()
-  authStore.restoreAuth()
-})
+const authStore = useAuthStore()
+const apiStore = useAPIStore()
+
+
+if (apiStore.token && !authStore.currentUser) {
+  await authStore.getUser()
+}
 </script>
