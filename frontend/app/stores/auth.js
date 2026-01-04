@@ -6,7 +6,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     const currentUser = ref(null)
 
-    const isAdmin = computed(() => isLoggedIn && currentUser.value.roleType === "Administrator")
+    const isAdmin = computed(() => isLoggedIn && currentUser.value?.roleType === "Administrator")
     const isLoggedIn = computed(() => !!currentUser.value)
 
     const login = async (credentials) => {

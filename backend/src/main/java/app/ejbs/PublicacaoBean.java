@@ -96,27 +96,27 @@ public class PublicacaoBean {
         if (hidden != null) publicacao.setHidden(hidden);
 
         // Handle Tags
-        if (tagsStr != null && !tagsStr.isBlank()) {
-            Set<Tag> newTags = new HashSet<>();
-            String[] tagNames = tagsStr.split(",");
-            for (String tagName : tagNames) {
-                String trimmedName = tagName.trim();
-                if (!trimmedName.isEmpty()) {
-                    List<Tag> existingTags = entityManager.createQuery("SELECT t FROM Tag t WHERE t.name = :name", Tag.class)
-                            .setParameter("name", trimmedName)
-                            .getResultList();
-
-                    if (existingTags.isEmpty()) {
-                        Tag newTag = new Tag(trimmedName);
-                        entityManager.persist(newTag);
-                        newTags.add(newTag);
-                    } else {
-                        newTags.add(existingTags.get(0));
-                    }
-                }
-            }
-            publicacao.setTags(newTags);
-        }
+//        if (tagsStr != null && !tagsStr.isBlank()) {
+//            Set<Tag> newTags = new HashSet<>();
+//            String[] tagNames = tagsStr.split(",");
+//            for (String tagName : tagNames) {
+//                String trimmedName = tagName.trim();
+//                if (!trimmedName.isEmpty()) {
+//                    List<Tag> existingTags = entityManager.createQuery("SELECT t FROM Tag t WHERE t.name = :name", Tag.class)
+//                            .setParameter("name", trimmedName)
+//                            .getResultList();
+//
+//                    if (existingTags.isEmpty()) {
+//                        Tag newTag = new Tag(trimmedName);
+//                        entityManager.persist(newTag);
+//                        newTags.add(newTag);
+//                    } else {
+//                        newTags.add(existingTags.get(0));
+//                    }
+//                }
+//            }
+//            publicacao.setTags(newTags);
+//        }
 
         // Add history entry
         HistoricoEdicao history = new HistoricoEdicao("Update details", editor, publicacao);
