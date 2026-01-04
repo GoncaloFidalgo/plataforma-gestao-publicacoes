@@ -54,6 +54,9 @@ public class UserBean {
         return entityManager.find(User.class, username);
     }
 
+    public List<User> findAll() {
+        return entityManager.createQuery("SELECT a FROM User a ORDER BY a.name", User.class).getResultList();
+    }
     public boolean canLogin(String username, String password) {
         var user = find(username);
         return user != null && Hasher.verify(password, user.getPassword());

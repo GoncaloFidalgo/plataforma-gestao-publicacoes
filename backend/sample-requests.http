@@ -67,18 +67,21 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2O
 
 
 ### Update User (Administrator only)
-PUT http://localhost:8080/academics/api/users/joao
+PUT http://localhost:8080/academics/api/users/dsadas
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
-
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzU1MzM4NywiZXhwIjoxNzY3NTU2OTg3fQ.KPW4PBBdMqnnihkUrCj1N2NKVvvY-mM0motn-2YUoMLAlU-tEF36vA-cswc1xlmN
 
 
 {
-  "username": "joao",
+  "username": "dsadas",
   "email": "joao.silva@gmail.com",
   "active": false
 }
 
+### Get Users
+GET http://localhost:8080/academics/api/users
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1MjMzNCwiZXhwIjoxNzY3NDU1OTM0fQ.qvflgzxJ-iMRjUgFOx_s4qOSIfRRP5vV0ZsRvTTCyQb40JuMvcWNhEipVoivubqO
 
 ### Delete User (Administrator only)
 DELETE http://localhost:8080/academics/api/users/joao

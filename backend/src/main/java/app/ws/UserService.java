@@ -1,5 +1,6 @@
 package app.ws;
 
+import app.dtos.AdministratorDTO;
 import app.dtos.UserDTO;
 import app.ejbs.UserBean;
 import app.exceptions.MyConstraintViolationException;
@@ -10,6 +11,8 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import java.util.List;
 
 @Path("users")
 @Produces(MediaType.APPLICATION_JSON)
@@ -84,6 +87,12 @@ public class UserService {
                     .entity("{\"mensagem\": \"Dados inválidos\"}")
                     .build();
         }
+    }
+    //endregion
+    @GET
+    @Path("/")
+    public List<UserDTO> getAllUsers() {
+        return UserDTO.from(userBean.findAll());
     }
     //endregion
 
