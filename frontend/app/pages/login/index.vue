@@ -1,19 +1,6 @@
 <template>
-  <!--
-    Layout Fixes:
-    - min-h-screen: Forces the div to take up the full screen height so vertical centering works.
-    - bg-gray-50: Adds the "white ghost" (light gray) background color.
-    - px-4: Adds breathing room on mobile screens.
-    - w-full: Ensures the container takes full width.
-  -->
   <div class="flex min-h-screen w-full items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 sm:px-6 lg:px-8">
 
-    <!--
-      Card Styling:
-      - shadow-xl: Gives it a strong lift/pop.
-      - ring-1: Adds a subtle border for better definition.
-      - bg-white: Ensures the card is distinctly white against the ghost background.
-    -->
     <UCard class="w-full max-w-md shadow-xl ring-1 ring-gray-200 dark:ring-gray-800 bg-white dark:bg-gray-900">
 
       <template #header>
@@ -24,18 +11,12 @@
           Sign in to access your dashboard
         </p>
       </template>
-
-      <!--
-        Nuxt UI "v4" (v3) Style:
-        - Uses :schema for automatic validation
-        - Binds directly to state
-      -->
+      
       <UForm
           :schema="schema"
           :state="credentials"
           @submit="handleLogin"
-          class="space-y-6"
-      >
+          class="space-y-6">
 
         <!-- Username Field -->
         <UFormField label="Username" name="username">
@@ -101,9 +82,7 @@ useHead({
   title: 'Login - DAE'
 })
 
-// CRITICAL FIX: Set layout to false.
 // This prevents 'layouts/default.vue' from wrapping this page
-// in a container that might break the full-screen centering.
 definePageMeta({
   layout: false
 })

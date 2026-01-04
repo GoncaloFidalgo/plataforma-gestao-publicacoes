@@ -1,9 +1,4 @@
-<template> 
-  <nuxt-link to="/">Home</nuxt-link> | 
-  <nuxt-link to="/students">Manage Students</nuxt-link> | 
-  <nuxt-link to="/teachers">Manage Teachers</nuxt-link> | 
-  <nuxt-link to="/courses">Manage Courses</nuxt-link> | 
-  <nuxt-link to="/subjects">Manage Subjects</nuxt-link>
+<template>
   <div v-if="error">Error: {{ error.message }}</div> 
   <div v-else> 
     <nuxt-link to="/administrators/create">Create a New Administrator</nuxt-link> 
