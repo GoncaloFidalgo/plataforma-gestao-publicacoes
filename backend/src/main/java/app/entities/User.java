@@ -8,24 +8,71 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users",   uniqueConstraints = { @UniqueConstraint(columnNames = "email") })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 
 public class User extends Versionable implements Serializable {
-
     @Id
+    @NotBlank
     private String username;
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    public String getUsername() {
+        return username;
+    }
+
     @NotBlank
     private String name;
+    public void setName(String name) {
+        this.name = name;
+    }
+    public String getName() {
+        return name;
+    }
+
     @Email
     @NotBlank
     private String email;
+    public void setEmail(String email) {
+        this.email = email;
+    }
+    public String getEmail() {
+        return email;
+    }
+
     @NotBlank
     private String password;
+    public void setPassword(String password) {
+        this.password = password;
+    }
+    public String getPassword() {
+        return password;
+    }
+
     private Boolean active = true;
+    public Boolean getActive() {
+        return active;
+    }
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
 
     private String resetToken;
+    public String getResetToken() {
+        return resetToken;
+    }
+    public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
+    }
+
     private LocalDateTime resetTokenExpiry;
+    public LocalDateTime getResetTokenExpiry() {
+        return resetTokenExpiry;
+    }
+    public void setResetTokenExpiry(LocalDateTime resetTokenExpiry) {
+        this.resetTokenExpiry = resetTokenExpiry;
+    }
 
     public User() {}
 
@@ -37,64 +84,4 @@ public class User extends Versionable implements Serializable {
 
     }
 
-    //region getters
-
-    public LocalDateTime getResetTokenExpiry() {
-        return resetTokenExpiry;
-    }
-
-    public String getResetToken() {
-        return resetToken;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public Boolean getActive() {
-        return active;
-    }
-    //endregion
-    //region setters
-
-    public void setResetTokenExpiry(LocalDateTime resetTokenExpiry) {
-        this.resetTokenExpiry = resetTokenExpiry;
-    }
-
-    public void setResetToken(String resetToken) {
-        this.resetToken = resetToken;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public void setActive(Boolean active) {
-        this.active = active;
-    }
-    //endregion
 }
