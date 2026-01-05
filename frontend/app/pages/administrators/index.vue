@@ -30,7 +30,7 @@
           </thead>
 
           <tbody>
-            <tr v-for="user in users" :key="user.id">
+            <tr v-for="user in users" :key="user.username">
               <td>
                 <NuxtLink :to="`/administrators/${user.username}`" class="link-quiet">
                   {{ user.name }}
@@ -98,7 +98,6 @@ const usersStore = useUsersStore()
 
 // ligar a tabela ao estado do store
 const users = computed(() => usersStore.users)
-
 onMounted(async () => {
   try {
     await usersStore.fetchUsers()

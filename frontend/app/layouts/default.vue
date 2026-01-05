@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+  <div class="min-h-screen flex flex-col">
+
     <!-- Navbar -->
     <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
       <div class="container mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -25,7 +26,7 @@
             </template>
 
             <template v-else>
-              <USkeleton class="h-8 w-32"/>
+              <USkeleton class="h-8 w-32" />
             </template>
           </ClientOnly>
         </div>
@@ -35,7 +36,7 @@
 
     <!-- Main Content -->
     <main class="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <slot/>
+      <slot />
     </main>
 
     <!-- Footer -->
@@ -73,9 +74,6 @@ const dropdownItems = computed(() => [
     onSelect() {
       navigateTo('/administrators')
     }
-  },
-  {
-    type: 'separator'
   },
   {
     type: 'separator'

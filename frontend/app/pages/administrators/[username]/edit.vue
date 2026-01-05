@@ -3,7 +3,7 @@
     <UCard class="w-full max-w-xl shadow-xl ring-1 ring-gray-200 dark:ring-gray-800 bg-white dark:bg-gray-900">
       <template #header>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          Edit User
+          Edit User <strong>{{ user.username }}</strong>
         </h1>
         <p class="text-sm text-gray-500 mt-1">
           Update user details and status
@@ -28,8 +28,8 @@
 
       <UForm v-else :schema="schema" :state="form" @submit="handleSubmit" class="space-y-6">
         <!-- Username -->
-        <UFormField label="Username" name="username">
-          <UInput v-model="form.username" placeholder="Username" :disabled="loading" />
+        <UFormField label="Name" name="name">
+          <UInput v-model="form.name" placeholder="Name" :disabled="loading" />
         </UFormField>
 
         <!-- Email -->
@@ -94,7 +94,7 @@ const user = computed(() =>
 )
 
 const form = ref({
-  username: '',
+  name: '',
   email: '',
   active: true
 })
@@ -104,15 +104,14 @@ const loading = ref(false)
 
 // schema de validação (Nuxt UI + Zod)
 const schema = z.object({
-  username: z.string().min(1, 'Username is required'),
-  email: z.string().email('Invalid email'),
+  name: z.string().min(1, 'Name is required'),
   active: z.boolean()
 })
 
 // preencher o form com dados do user
 watchEffect(() => {
   if (user.value) {
-    form.value.username = user.value.username
+    form.value.name = user.value.name
     form.value.email = user.value.email
     form.value.active = user.value.active
   }
@@ -140,7 +139,7 @@ const handleSubmit = async () => {
   try {
     console.log(user.value)
     await usersStore.updateUser(user.value.username, {
-      username: form.value.username,
+      name: form.value.name,
       email: form.value.email,
       active: form.value.active
     })
@@ -152,7 +151,7 @@ const handleSubmit = async () => {
       icon: 'i-heroicons-check-circle'
     })
 
-    await router.push(`/administrators/${user.value.username}`)
+    await router.push(`/administrators`)
   } catch (err) {
     console.error(err)
     errorMessage.value = 'Could not update user. Please try again.'

@@ -108,7 +108,7 @@ public class UserBean {
         user.setPassword(Hasher.hash(newPassword));
     }
 
-    public void updateUser(String username, String newUsername, String email, Boolean active) {
+  /*  public void updateUser(String username, String newUsername, String email, Boolean active) {
         User user = entityManager.find(User.class, username);
         if (user == null) {
             throw new IllegalArgumentException("User " + username + " not found");
@@ -120,6 +120,26 @@ public class UserBean {
                 throw new IllegalArgumentException("Username " + newUsername + " already exists");
             }
             user.setUsername(newUsername);
+        }
+
+        if (email != null) {
+            user.setEmail(email);
+        }
+
+        if (active != null) {
+            user.setActive(active);
+        }
+    }*/
+
+    public void updateUser(String username, String newName, String email, Boolean active) {
+        User user = entityManager.find(User.class, username);
+        if (user == null) {
+            throw new IllegalArgumentException("User " + username + " not found");
+        }
+        entityManager.lock(user, jakarta.persistence.LockModeType.OPTIMISTIC);
+
+        if (email != null) {
+            user.setName(newName);
         }
 
         if (email != null) {

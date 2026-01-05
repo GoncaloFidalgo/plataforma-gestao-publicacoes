@@ -74,6 +74,7 @@ export const useAPIStore = defineStore('api', () => {
 
     const updateUser = async (id, payload) => {
         const {data} = await axios.put(`${API_BASE_URL}/users/${id}`, payload, {headers: authHeader()})
+        console.log("payload", payload)
         return data
     }
 

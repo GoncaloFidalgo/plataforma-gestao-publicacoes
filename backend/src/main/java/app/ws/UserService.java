@@ -104,7 +104,7 @@ public class UserService {
 
             userBean.updateUser(
                     username,
-                    dto.getUsername(),
+                    dto.getName(),
                     dto.getEmail(),
                     dto.getActive()
             );

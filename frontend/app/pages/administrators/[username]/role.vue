@@ -158,7 +158,7 @@ const handleSubmit = async () => {
       icon: 'i-heroicons-check-circle'
     })
 
-    await router.push(`/administrators/${user.value.username}`)
+    await router.push(`/administrators`)
   } catch (err) {
     console.error(err)
     errorMessage.value = 'Could not change role. Please try again.'

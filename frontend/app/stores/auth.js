@@ -1,24 +1,36 @@
+// stores/auth.js
 import { defineStore } from 'pinia'
-import {useAPIStore} from "~/stores/api.js";
+import { useAPIStore } from '~/stores/api.js'
 
 export const useAuthStore = defineStore('auth', () => {
-    const apiStore = useAPIStore()
+  const apiStore = useAPIStore()
 
-    const currentUser = ref(null)
+  const currentUser = ref(null)
 
-    const isAdmin = computed(() => isLoggedIn && currentUser.value.roleType === "Administrator")
-    const isLoggedIn = computed(() => !!currentUser.value)
+  const isLoggedIn = computed(() => !!currentUser.value)
 
-    const login = async (credentials) => {
-        await apiStore.postLogin(credentials)
-        await getUser()
+  const isAdmin = computed(() => {
+    if (!currentUser.value) return false
+
+    if (currentUser.value.roleType) {
+      return currentUser.value.roleType.toLowerCase() === 'administrator'
     }
+    if (typeof currentUser.value.role === 'number') {
+      return currentUser.value.role === 1
+    }
+    return false
+  })
 
-    const logout = async () => {
-        apiStore.token = null
-        currentUser.value = null
-        navigateTo('/login')
-        }
+  const login = async (credentials) => {
+    console.log('🟡 authStore.login() called with:', credentials)
+
+    try {
+      await apiStore.postLogin(credentials)
+      const user = await getUser()
+    } catch (error) {
+      throw error
+    }
+  }
 
   const getUser = async () => {
     if (!apiStore.token) {
@@ -49,6 +61,18 @@ const changePassword = async (payload) => {
   }
 }
 
+  const logout = async () => {
+    apiStore.token = null
+    currentUser.value = null
+
+    const cookie = useCookie('auth_token')
+    cookie.value = null
+
+    if (process.client) {
+      await navigateTo('/login')
+    }
+  }
+
   return {
     currentUser,
     isLoggedIn,
@@ -56,6 +80,6 @@ const changePassword = async (payload) => {
     login,
     logout,
     getUser,
-    changePassword
+    changePassword  
   }
 })

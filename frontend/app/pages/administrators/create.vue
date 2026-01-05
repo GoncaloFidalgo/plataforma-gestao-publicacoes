@@ -55,7 +55,6 @@
             v-model="form.role"
             :items="roles"
             placeholder="Select role"
-            :disabled="loading"
           />
         </UFormField>
 
@@ -71,7 +70,7 @@
 
         <!-- Actions -->
         <div class="flex justify-between items-center">
-          <UButton :to="`/administrators`" color="primary" variant="outline" :disabled="loading">
+          <UButton :to="`/administrators`" color="primary" variant="outline">
             Cancel
           </UButton>
 
@@ -119,9 +118,14 @@ const onSubmit = async () => {
 
   try {
     const payload = { ...form, role: Number(form.role) }
+    console.log('🟡 antes createUser', usersStore.users /* ou o array que uses */)
+
     await usersStore.createUser(payload)
 
-    await router.push('/administrators')
+    console.log('🟢 depois createUser', usersStore.users)
+
+
+    await router.push(`/administrators`)
   } catch (error) {
     console.error('Erro ao criar utilizador:', error?.response?.data || error)
     alert('Erro ao criar utilizador.')

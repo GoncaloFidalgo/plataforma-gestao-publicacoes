@@ -50,7 +50,13 @@ export const useUsersStore = defineStore('users', () => {
   const createUser = async (payload) => {
     try {
       const data = await apiStore.createUser(payload)
-      users.value.push(data)
+
+      if (data) {
+        users.value.push(data)
+      } else {
+        await fetchUsers()
+      }
+
       return data
     } catch (err) {
       console.error('Erro ao criar utilizador:', err.response?.data || err)
