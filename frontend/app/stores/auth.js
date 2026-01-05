@@ -80,6 +80,6 @@ const changePassword = async (payload) => {
     login,
     logout,
     getUser,
-    changePassword  
+    changePassword
   }
 })

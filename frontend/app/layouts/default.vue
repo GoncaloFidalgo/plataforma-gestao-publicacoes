@@ -58,7 +58,7 @@ const authStore = useAuthStore()
 const toast = useToast()
 
 const dropdownItems = computed(() => [
-  {
+  [{
     label: 'My Account',
     icon: 'i-heroicons-user-circle',
     onSelect() {
@@ -75,14 +75,27 @@ const dropdownItems = computed(() => [
       navigateTo('/administrators')
     }
   },
-  {
-    type: 'separator'
-  },
-  {
-    label: 'Logout',
-    icon: 'i-heroicons-arrow-left-on-rectangle',
-    color: 'error',
-    onSelect: () => authStore.logout()
-  }
+  ],
+  [
+    {
+      label: 'Dashboard',
+      children: [
+        [
+          {
+            label: 'Tags',
+            onSelect: () => navigateTo('/tags')
+          },
+        ],
+      ]
+    },
+  ],
+  [
+    {
+      label: 'Logout',
+      icon: 'i-heroicons-arrow-left-on-rectangle',
+      color: 'error',
+      onSelect: () => authStore.logout()
+    }
+  ],
 ])
 </script>
