@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+  <div class="min-h-screen flex flex-col">
+
     <!-- Navbar -->
     <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
       <div class="container mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -16,24 +17,16 @@
           <ClientOnly>
             <template v-if="authStore.currentUser">
               <UDropdownMenu :items="dropdownItems" :content="{ align: 'end', side: 'bottom' }">
-                <UButton
-                    color="neutral"
-                    variant="ghost"
-                    trailing-icon="i-heroicons-chevron-down"
-                    class="font-medium text-gray-700 dark:text-gray-200"
-                >
-                  <UAvatar
-                      :alt="authStore.currentUser.name"
-                      size="xs"
-                      class="mr-1"
-                  />
+                <UButton color="primary" variant="soft" trailing-icon="i-heroicons-chevron-down"
+                 class="rounded-full px-3 font-medium text-orange-700 dark:text-orange-200 hover:bg-orange-200/60 dark:hover:bg-orange-500/20">
+                  <UAvatar :alt="authStore.currentUser.name" size="xs" class="mr-1" />
                   {{ authStore.currentUser.name }}
                 </UButton>
               </UDropdownMenu>
             </template>
 
             <template v-else>
-              <USkeleton class="h-8 w-32"/>
+              <USkeleton class="h-8 w-32" />
             </template>
           </ClientOnly>
         </div>
@@ -43,7 +36,7 @@
 
     <!-- Main Content -->
     <main class="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <slot/>
+      <slot />
     </main>
 
     <!-- Footer -->
@@ -57,12 +50,30 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useAuthStore } from '~/stores/auth'
+import { useToast } from '#imports'
+
 const authStore = useAuthStore()
+const toast = useToast()
 
 const dropdownItems = computed(() => [
   [{
     label: 'My Account',
-    type: 'label'
+    icon: 'i-heroicons-user-circle',
+    onSelect() {
+      navigateTo('/account')
+    }
+  },
+  {
+    type: 'separator'
+  },
+  {
+    label: 'Adminstrator Dashboard',
+    icon: 'i-heroicons-table-cells',
+    onSelect() {
+      navigateTo('/administrators')
+    }
   },
   ],
   [
