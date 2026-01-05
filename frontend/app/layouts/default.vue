@@ -16,17 +16,9 @@
           <ClientOnly>
             <template v-if="authStore.currentUser">
               <UDropdownMenu :items="dropdownItems" :content="{ align: 'end', side: 'bottom' }">
-                <UButton
-                    color="neutral"
-                    variant="ghost"
-                    trailing-icon="i-heroicons-chevron-down"
-                    class="font-medium text-gray-700 dark:text-gray-200"
-                >
-                  <UAvatar
-                      :alt="authStore.currentUser.name"
-                      size="xs"
-                      class="mr-1"
-                  />
+                <UButton color="primary" variant="soft" trailing-icon="i-heroicons-chevron-down"
+                 class="rounded-full px-3 font-medium text-orange-700 dark:text-orange-200 hover:bg-orange-200/60 dark:hover:bg-orange-500/20">
+                  <UAvatar :alt="authStore.currentUser.name" size="xs" class="mr-1" />
                   {{ authStore.currentUser.name }}
                 </UButton>
               </UDropdownMenu>
@@ -57,12 +49,33 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useAuthStore } from '~/stores/auth'
+import { useToast } from '#imports'
+
 const authStore = useAuthStore()
+const toast = useToast()
 
 const dropdownItems = computed(() => [
   {
     label: 'My Account',
-    type: 'label'
+    icon: 'i-heroicons-user-circle',
+    onSelect() {
+      navigateTo('/account')
+    }
+  },
+  {
+    type: 'separator'
+  },
+  {
+    label: 'Adminstrator Dashboard',
+    icon: 'i-heroicons-table-cells',
+    onSelect() {
+      navigateTo('/administrators')
+    }
+  },
+  {
+    type: 'separator'
   },
   {
     type: 'separator'

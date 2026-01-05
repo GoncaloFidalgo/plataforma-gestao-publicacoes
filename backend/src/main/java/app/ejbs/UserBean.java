@@ -12,6 +12,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.validation.ConstraintViolationException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Stateless
 public class UserBean {
@@ -128,6 +129,78 @@ public class UserBean {
         if (active != null) {
             user.setActive(active);
         }
+    }
+
+    public void deleteUser(String username) {
+        User user = entityManager.find(User.class, username);
+        if (user == null) {
+            throw new RuntimeException("Utilizador não encontrado");
+        }
+        entityManager.remove(user);
+    }
+
+    public void updateUserStatus(String username, Boolean active, String motive) {
+        User user = entityManager.find(User.class, username);
+        if (user == null) {
+            throw new RuntimeException("Utilizador não encontrado");
+        }
+
+        user.setActive(active);
+        // Note: The motive is received but not stored in the current User entity
+        // You may want to add a field to store suspension reasons if needed
+    }
+
+    public void updateUserRole(String username, Integer role) {
+        User user = entityManager.find(User.class, username);
+        if (user == null) {
+            throw new RuntimeException("Utilizador não encontrado");
+        }
+
+        // Validate role
+        if (role == null || role < 1 || role > 3) {
+            throw new IllegalArgumentException("Role inválida. Deve ser 1 (Administrator), 2 (Responsavel) ou 3 (Colaborador)");
+        }
+
+        // Cannot change role by simple update - need to create new entity with correct type
+        String currentType = org.hibernate.Hibernate.getClass(user).getSimpleName();
+        String targetType = switch (role) {
+            case 1 -> "Administrator";
+            case 2 -> "Responsavel";
+            case 3 -> "Colaborador";
+            default -> throw new IllegalArgumentException("Role inválida");
+        };
+
+        // If same type, no change needed
+        if (currentType.equals(targetType)) {
+            return;
+        }
+
+        // Store current data
+        String username2 = user.getUsername();
+        String password = user.getPassword();
+        String name = user.getName();
+        String email = user.getEmail();
+        Boolean active = user.getActive();
+
+        // Remove old entity
+        entityManager.remove(user);
+        entityManager.flush();
+
+        // Create new entity with correct type
+        User newUser = switch (role) {
+            case 1 -> new Administrator(username2, password, name, email);
+            case 2 -> new Responsavel(username2, password, name, email);
+            case 3 -> new Colaborador(username2, password, name, email);
+            default -> throw new IllegalArgumentException("Role inválida");
+        };
+
+        newUser.setActive(active);
+        entityManager.persist(newUser);
+    }
+
+    public List<User> findAll() {
+        return entityManager.createQuery("SELECT u FROM User u ORDER BY u.name", User.class)
+                .getResultList();
     }
 
 
