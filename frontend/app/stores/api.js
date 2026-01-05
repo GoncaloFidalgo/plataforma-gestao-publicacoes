@@ -121,7 +121,6 @@ export const useAPIStore = defineStore('api', () => {
         createUser,
         updateUser,
         deleteUser: deleteUserApi,
-        refreshToken,
         setUserStatus,
         setUserRole,
         changePassword

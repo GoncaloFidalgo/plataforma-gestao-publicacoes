@@ -56,7 +56,6 @@ const changePassword = async (payload) => {
     login,
     logout,
     getUser,
-    refreshToken,
     changePassword
   }
 })
