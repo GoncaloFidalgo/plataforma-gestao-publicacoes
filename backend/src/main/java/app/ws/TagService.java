@@ -29,14 +29,14 @@ public class TagService {
     private SecurityContext securityContext;
 
     @GET
-    public Response getAllTags(@QueryParam("hidden") Boolean hidden) {
+    public Response getAll(@QueryParam("hidden") Boolean hidden) {
         List<Tag> tags = tagBean.findAll(hidden);
         return Response.ok(TagDTO.from(tags)).build();
     }
 
     @POST
     @RolesAllowed({"Administrator", "Responsavel"})
-    public Response createTag(TagDTO dto) {
+    public Response create(TagDTO dto) {
         try {
             tagBean.create(dto.getName(), dto.getDescription(), dto.getScientific_area());
             // Return what we received (assuming success)
@@ -50,7 +50,7 @@ public class TagService {
     @PUT
     @Path("{name}")
     @RolesAllowed({"Administrator", "Responsavel"})
-    public Response updateTag(@PathParam("name") String name, TagDTO dto) {
+    public Response update(@PathParam("name") String name, TagDTO dto) {
         try {
             tagBean.update(name, dto.getDescription(), dto.getScientific_area(), dto.getHidden());
 
@@ -64,7 +64,7 @@ public class TagService {
     @DELETE
     @Path("{name}")
     @RolesAllowed({"Administrator", "Responsavel"})
-    public Response deleteTag(@PathParam("name") String name) {
+    public Response delete(@PathParam("name") String name) {
         try {
             tagBean.delete(name);
             return Response.ok("{\"mensagem\": \"Tag removida do sistema com sucesso. Todas as associações foram removidas.\"}").build();

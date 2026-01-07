@@ -1,0 +1,38 @@
+### Upload Publication (Multipart)
+POST http://localhost:8080/academics/api/publications
+Authorization: Bearer {{auth_token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="metadata"
+Content-Type: application/json
+
+{
+  "titulo": "Deep Learning Thesis",
+  "tipo": "Thesis",
+  "area_cientifica": "Computer Science",
+  "descricao": "Research about Neural Networks",
+  "autores": ["admin"],
+  "tags": ["Java"],
+  "hidden": false
+}
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="test.zip"
+Content-Type: application/pdf
+
+< ./test.pdf
+--WebAppBoundary--
+
+### Download Publication File
+GET http://localhost:8080/academics/api/publications/2/ficheiro
+Authorization: Bearer {{auth_token}}
+
+### Get All Publications (Search)
+GET http://localhost:8080/academics/api/publications
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+### Get Publication Details
+GET http://localhost:8080/academics/api/publications/1
+Authorization: Bearer {{auth_token}}
+Accept: application/json

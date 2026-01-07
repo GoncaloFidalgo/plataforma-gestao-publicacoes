@@ -13,7 +13,6 @@ public class ConfigBean {
     @EJB
     private AdministratorBean administratorBean;
 
-
     @PostConstruct
     public void populateDB()  {
         try {
