@@ -1,7 +1,3 @@
-### Get All administrators
-GET http://localhost:8080/academics/api/administrators
-Accept: application/json
-
 ### LOGIN - Get JWT Token (Use this first!)
 POST http://localhost:8080/academics/api/auth/login
 Content-Type: application/json
@@ -52,14 +48,14 @@ PUT http://localhost:8080/academics/api/auth/reset-password
 Content-Type: application/json
 
 {
-  "token": "550e8400-e29b-41d4-a716-446655440000",
+  "token": "32e462ce-349d-48c6-a6cc-9ca55769a85f",
   "nova_password": "1234"
 }
 
 ### Create User (Administrator only)
 POST http://localhost:8080/academics/api/users
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzgzNDc4MSwiZXhwIjoxNzY3ODM4MzgxfQ.E3hfmSKiqDfgXrgUszgp2bjHd7_o1yb2WYHXRtcekPbh3ok948V3JbaHCQlQOE64
 
 
 {
@@ -91,7 +87,7 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1M
 
 ### Delete User (Administrator only)
 DELETE http://localhost:8080/academics/api/users/joao
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1MjMzNCwiZXhwIjoxNzY3NDU1OTM0fQ.qvflgzxJ-iMRjUgFOx_s4qOSIfRRP5vV0ZsRvTTCyQb40JuMvcWNhEipVoivubqO
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzgzMTIzMCwiZXhwIjoxNzY3ODM0ODMwfQ.veJXOOjKn3g5KIMjlVOaMnDNnnzVb8KK5WE7eJ1e0myXcTsU_jOa8O7viCbRTpWB
 
 ### Suspend User (Administrator only)
 PATCH http://localhost:8080/academics/api/users/joao/status
