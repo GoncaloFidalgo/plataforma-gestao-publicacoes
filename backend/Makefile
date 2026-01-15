@@ -37,3 +37,6 @@ monitor: deploy logs
 
 mails:
 	docker compose exec --workdir /var/mail smtp bash
+
+clean-mails:
+	docker compose exec smtp bash -c "rm -f /var/mail/*.eml"
