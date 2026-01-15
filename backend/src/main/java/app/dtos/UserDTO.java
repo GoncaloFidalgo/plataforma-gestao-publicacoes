@@ -16,6 +16,11 @@ public class UserDTO implements Serializable {
     private Boolean active;
     private String roleType;
 
+    private List<Object> publicacoes = new java.util.ArrayList<>();
+    private List<Object> comentarios = new java.util.ArrayList<>();
+    private List<Object> ratings = new java.util.ArrayList<>();
+    private List<Object> tags_subscritas = new java.util.ArrayList<>();
+
     public UserDTO() {
     }
 
@@ -55,8 +60,6 @@ public class UserDTO implements Serializable {
 
     //region setters
 
-
-
     public void setPassword(String password) {
         this.password = password;
     }
@@ -84,6 +87,14 @@ public class UserDTO implements Serializable {
     public void setEmail(String email) {
         this.email = email;
     }
+
+    public void setPublicacoes(List<Object> publicacoes) { this.publicacoes = publicacoes; }
+
+    public void setComentarios(List<Object> comentarios) { this.comentarios = comentarios; }
+
+    public void setRatings(List<Object> ratings) { this.ratings = ratings; }
+
+    public void setTags_subscritas(List<Object> tags_subscritas) { this.tags_subscritas = tags_subscritas; }
 
     //endregion
     //region getters
@@ -116,6 +127,14 @@ public class UserDTO implements Serializable {
     public String getEmail() {
         return email;
     }
+
+    public List<Object> getPublicacoes() { return publicacoes; }
+
+    public List<Object> getComentarios() { return comentarios; }
+
+    public List<Object> getRatings() { return ratings; }
+
+    public List<Object> getTags_subscritas() { return tags_subscritas; }
 
     //endregion
 }

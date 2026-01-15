@@ -6,6 +6,7 @@ import app.entities.Responsavel;
 import app.entities.User;
 import app.exceptions.MyConstraintViolationException;
 import app.security.Hasher;
+import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -18,6 +19,9 @@ import java.util.List;
 public class UserBean {
     @PersistenceContext
     private EntityManager entityManager;
+
+    @EJB
+    private EmailBean emailBean;
 
     public User createUser(String username, String password, String name, String email, Integer role, Boolean active)
             throws MyConstraintViolationException {
@@ -70,7 +74,7 @@ public class UserBean {
         user.setPassword(Hasher.hash(newPassword));
     }
 
-    public String recoverPassword(String email) {
+    public void recoverPassword(String email) {
         var user = entityManager.createQuery(
                         "SELECT u FROM User u WHERE u.email = :email", User.class)
                 .setParameter("email", email)
@@ -85,8 +89,20 @@ public class UserBean {
         user.setResetToken(token);
         user.setResetTokenExpiry(LocalDateTime.now().plusHours(1));
 
+        String subject = "Recuperacao de Palavra-passe";
+        String text = String.format(
+                "Ola %s,\n\n" +
+                        "Recebemos um pedido para redefinir a sua palavra-passe.\n\n" +
+                        "Token de recuperacao: %s\n\n" +
+                        "Este token e valido por 1 hora.\n\n" +
+                        "Se nao solicitou esta alteracao, ignore este email.\n\n" +
+                        "Cumprimentos,\nEquipa de Suporte",
+                user.getName(),
+                token
+        );
 
-        return token; // APENAS para testes locais
+        emailBean.send(email, subject, text);
+
     }
 
     public void resetPassword(String token, String newPassword) {
@@ -99,13 +115,20 @@ public class UserBean {
         }
 
         var user = entityManager.createQuery(
-                        "SELECT u FROM User u", User.class)
-                .setMaxResults(1)
+                        "SELECT u FROM User u WHERE u.resetToken = :token", User.class)
+                .setParameter("token", token)
                 .getResultStream()
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Token inválido ou expirado"));
 
+        // Verificar se o token ainda está válido
+        if (user.getResetTokenExpiry() == null || LocalDateTime.now().isAfter(user.getResetTokenExpiry())) {
+            throw new RuntimeException("Token expirado");
+        }
+
         user.setPassword(Hasher.hash(newPassword));
+        user.setResetToken(null);
+        user.setResetTokenExpiry(null);
     }
 
   /*  public void updateUser(String username, String newUsername, String email, Boolean active) {
