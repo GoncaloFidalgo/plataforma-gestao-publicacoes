@@ -2,11 +2,14 @@ package app.ejbs;
 
 import app.entities.*;
 import app.exceptions.MyConstraintViolationException;
+import app.exceptions.MyEntityNotFoundException;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.validation.ConstraintViolationException;
+import org.hibernate.Hibernate;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -17,9 +20,37 @@ public class PublicacaoBean {
     @PersistenceContext
     private EntityManager entityManager;
 
-    public Publicacao create(String titulo, String autor, String areaCientifica, String descricao, String file, String resumo, String createdBy, String createdByName) throws MyConstraintViolationException {
+    public Publicacao create(String titulo, String tipo, List<String> authorUsernames, String areaCientifica, String descricao, String file, List<String> tagNames, String creatorUsername) throws MyConstraintViolationException, MyEntityNotFoundException {
         try {
-            Publicacao publicacao = new Publicacao(titulo, autor, areaCientifica, descricao, file, resumo, createdBy, createdByName);
+            // Encontrar o criador
+            User creator = entityManager.find(User.class, creatorUsername);
+            if (creator == null) {
+                throw new MyEntityNotFoundException("User '" + creatorUsername + "' not found.");
+            }
+
+            // Criar a publicação
+            Publicacao publicacao = new Publicacao(titulo, tipo, areaCientifica, descricao, file, creator);
+
+            if (authorUsernames != null) {
+                for (String username : authorUsernames) {
+                    Colaborador autor = entityManager.find(Colaborador.class, username);
+                    if (autor != null) {
+                        publicacao.addAutor(autor);
+                    }
+                }
+            }
+
+            if (tagNames != null && !tagNames.isEmpty()) {
+                List<Tag> tagsToSet = new ArrayList<>();
+                for (String tagName : tagNames) {
+                    // Since Tag ID is the name, we try to find it
+                    Tag tag = entityManager.find(Tag.class, tagName);
+                    if (tag != null) {
+                        tagsToSet.add(tag);
+                    }
+                }
+                publicacao.setTags(tagsToSet);
+            }
             entityManager.persist(publicacao);
             return publicacao;
         } catch (ConstraintViolationException e) {
@@ -27,19 +58,22 @@ public class PublicacaoBean {
         }
     }
 
+
     public Publicacao find(Long id) {
         Publicacao p = entityManager.find(Publicacao.class, id);
         if (p != null) {
-            p.getTags().size();
-            p.getComentarios().size();
-            p.getRatings().size();
-            p.getHistoricoEdicoes().size();
+            // Initializar as coleções
+            Hibernate.initialize(p.getTags());
+            Hibernate.initialize(p.getComentarios());
+            Hibernate.initialize(p.getRatings());
+            Hibernate.initialize(p.getHistoricoEdicoes());
+            Hibernate.initialize(p.getAutores());
         }
         return p;
     }
 
-    public List<Publicacao> findAll(String tag, String titulo, String autor, String areaCientifica, String uploader, Boolean hidden) {
-        StringBuilder jpql = new StringBuilder("SELECT DISTINCT p FROM Publicacao p LEFT JOIN p.tags t WHERE 1=1");
+    public List<Publicacao> findAll(String tag, String titulo, String autorName, String areaCientifica, String uploaderName, Boolean hidden) {
+        StringBuilder jpql = new StringBuilder("SELECT DISTINCT p FROM Publicacao p LEFT JOIN p.tags t LEFT JOIN p.autores a WHERE 1=1");
 
         if (tag != null && !tag.isBlank()) {
             jpql.append(" AND LOWER(t.name) LIKE LOWER(:tag)");
@@ -47,99 +81,94 @@ public class PublicacaoBean {
         if (titulo != null && !titulo.isBlank()) {
             jpql.append(" AND LOWER(p.titulo) LIKE LOWER(:titulo)");
         }
-        if (autor != null && !autor.isBlank()) {
-            jpql.append(" AND LOWER(p.autor) LIKE LOWER(:autor)");
+        if (autorName != null && !autorName.isBlank()) {
+            jpql.append(" AND LOWER(a.name) LIKE LOWER(:autorName)");
         }
         if (areaCientifica != null && !areaCientifica.isBlank()) {
             jpql.append(" AND LOWER(p.areaCientifica) LIKE LOWER(:areaCientifica)");
         }
-        if (uploader != null && !uploader.isBlank()) {
-            jpql.append(" AND LOWER(p.createdByName) LIKE LOWER(:uploader)");
+        if (uploaderName != null && !uploaderName.isBlank()) {
+            jpql.append(" AND LOWER(p.createdBy.name) LIKE LOWER(:uploaderName)");
         }
         if (hidden != null) {
             jpql.append(" AND p.hidden = :hidden");
         }
 
+        jpql.append(" ORDER BY p.createdAt DESC");
+
         var query = entityManager.createQuery(jpql.toString(), Publicacao.class);
 
         if (tag != null && !tag.isBlank()) query.setParameter("tag", "%" + tag + "%");
         if (titulo != null && !titulo.isBlank()) query.setParameter("titulo", "%" + titulo + "%");
-        if (autor != null && !autor.isBlank()) query.setParameter("autor", "%" + autor + "%");
+        if (autorName != null && !autorName.isBlank()) query.setParameter("autorName", "%" + autorName + "%");
         if (areaCientifica != null && !areaCientifica.isBlank()) query.setParameter("areaCientifica", "%" + areaCientifica + "%");
-        if (uploader != null && !uploader.isBlank()) query.setParameter("uploader", "%" + uploader + "%");
+        if (uploaderName != null && !uploaderName.isBlank()) query.setParameter("uploaderName", "%" + uploaderName + "%");
         if (hidden != null) query.setParameter("hidden", hidden);
 
         List<Publicacao> results = query.getResultList();
 
-        // FORCE LOAD collections for the search results too
         for (Publicacao p : results) {
-            p.getTags().size();
-            p.getComentarios().size();
-            p.getRatings().size();
-            p.getHistoricoEdicoes().size();
+            Hibernate.initialize(p.getTags());
+            Hibernate.initialize(p.getAutores());
+            Hibernate.initialize(p.getRatings());
+            Hibernate.initialize(p.getComentarios());
         }
 
         return results;
     }
 
-    public Publicacao update(Long id, String titulo, String autor, String areaCientifica, String descricao, String resumo, String tagsStr, Boolean hidden, String editorUsername) {
+    public Publicacao update(Long id, String titulo, String autorUsernameToAdd, String areaCientifica, String descricao, String resumo, List<String> tagNames, Boolean hidden, String editorUsername) throws MyEntityNotFoundException {
         var publicacao = entityManager.find(Publicacao.class, id);
         if (publicacao == null) return null;
 
         User editor = entityManager.find(User.class, editorUsername);
+        if (editor == null) throw new MyEntityNotFoundException("Editor not found");
 
         if (titulo != null) publicacao.setTitulo(titulo);
-        if (autor != null) publicacao.setAutor(autor);
+
+        // Adicionar novo autor
+        if (autorUsernameToAdd != null && !autorUsernameToAdd.isBlank()) {
+            Colaborador newAutor = entityManager.find(Colaborador.class, autorUsernameToAdd);
+            if (newAutor != null && !publicacao.getAutores().contains(newAutor)) {
+                publicacao.addAutor(newAutor);
+            }
+        }
+
         if (areaCientifica != null) publicacao.setAreaCientifica(areaCientifica);
         if (descricao != null) publicacao.setDescricao(descricao);
         if (resumo != null) publicacao.setResumo(resumo);
         if (hidden != null) publicacao.setHidden(hidden);
 
-        // Handle Tags
-//        if (tagsStr != null && !tagsStr.isBlank()) {
-//            Set<Tag> newTags = new HashSet<>();
-//            String[] tagNames = tagsStr.split(",");
-//            for (String tagName : tagNames) {
-//                String trimmedName = tagName.trim();
-//                if (!trimmedName.isEmpty()) {
-//                    List<Tag> existingTags = entityManager.createQuery("SELECT t FROM Tag t WHERE t.name = :name", Tag.class)
-//                            .setParameter("name", trimmedName)
-//                            .getResultList();
-//
-//                    if (existingTags.isEmpty()) {
-//                        Tag newTag = new Tag(trimmedName);
-//                        entityManager.persist(newTag);
-//                        newTags.add(newTag);
-//                    } else {
-//                        newTags.add(existingTags.get(0));
-//                    }
-//                }
-//            }
-//            publicacao.setTags(newTags);
-//        }
+        // Tags
+        if (tagNames != null) {
+            List<Tag> tagsToSet = new ArrayList<>();
+            for (String tagName : tagNames) {
+                // Encontrar a tag
+                Tag tag = entityManager.find(Tag.class, tagName);
 
-        // Add history entry
+                if (tag != null) {
+                    tagsToSet.add(tag);
+                }
+            }
+            publicacao.setTags(tagsToSet);
+        }
+
+
         HistoricoEdicao history = new HistoricoEdicao("Update details", editor, publicacao);
         publicacao.getHistoricoEdicoes().add(history);
+        entityManager.persist(history);
 
+        // Para guardar as alterações
         entityManager.flush();
 
-        publicacao.getTags().size();
-        publicacao.getComentarios().size();
-        publicacao.getRatings().size();
-        publicacao.getHistoricoEdicoes().size();
+        // Atualizar as coleções
+        Hibernate.initialize(publicacao.getTags());
+        Hibernate.initialize(publicacao.getAutores());
 
         return publicacao;
     }
 
-    // Optional: Add Comment method if you implement it later
-//    public void addComment(Long publicacaoId, String username, String text) {
-//        Publicacao p = entityManager.find(Publicacao.class, publicacaoId);
-//        User u = entityManager.find(User.class, username);
-//        if (p != null && u != null) {
-//            p.addComentario(new Comentario(text, u, p));
-//        }
-//    }
+
 
     public void delete(Long id) {
         var publicacao = entityManager.find(Publicacao.class, id);

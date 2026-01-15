@@ -50,21 +50,6 @@ public class AuthService {
     }
 
     @POST
-    @Authenticated
-    @Path("/refresh-token")
-    public Response refreshToken() {
-        var username = securityContext.getUserPrincipal().getName();
-        var user = userBean.find(username);
-
-        if (user == null) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
-        }
-
-        String newToken = TokenIssuer.issue(username);
-        return Response.ok(newToken).build();
-    }
-
-    @POST
     @Path("/recover-password")
     public Response recoverPassword(Map<String, String> emailRequest) {
         String email = emailRequest.get("email");

@@ -2,55 +2,109 @@ package app.dtos;
 
 import app.entities.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import org.hibernate.Hibernate;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class PublicacaoDTO implements Serializable {
     private Long id;
     private String titulo;
-    private String autor;
+    private String tipo;
     private String areaCientifica;
     private String descricao;
     private String file;
+    private String fileType;
     private String resumo;
+    private Boolean hidden;
+    private Double ratingAverage;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private LocalDateTime createdAt;
-    private String createdByName;
-    private Boolean hidden;
 
-    private List<RatingDTO> ratings;
-    private List<ComentarioDTO> comentarios;
-    private List<HistoricoEdicaoDTO> historicoEdicoes;
+    private String creatorUsername;
+    private String creatorName;
+
+    private List<AuthorInfo> autores;
     private List<String> tags;
 
+
     public PublicacaoDTO() {}
+
 
     public static PublicacaoDTO from(Publicacao p) {
         PublicacaoDTO dto = new PublicacaoDTO();
         dto.setId(p.getId());
         dto.setTitulo(p.getTitulo());
-        dto.setAutor(p.getAutor());
+        dto.setTipo(p.getTipo());
         dto.setAreaCientifica(p.getAreaCientifica());
         dto.setDescricao(p.getDescricao());
         dto.setFile(p.getFile());
         dto.setResumo(p.getResumo());
-        dto.setCreatedAt(p.getCreatedAt());
-        dto.setCreatedByName(p.getCreatedByName());
         dto.setHidden(p.getHidden());
+        dto.setCreatedAt(p.getCreatedAt());
 
-        dto.setRatings(p.getRatings().stream().map(RatingDTO::from).collect(Collectors.toList()));
-        dto.setComentarios(p.getComentarios().stream().map(ComentarioDTO::from).collect(Collectors.toList()));
-        dto.setHistoricoEdicoes(p.getHistoricoEdicoes().stream().map(HistoricoEdicaoDTO::from).collect(Collectors.toList()));
-        dto.setTags(p.getTags().stream().map(Tag::getName).collect(Collectors.toList()));
+        if (p.getFile() != null) {
+            if (p.getFile().toLowerCase().endsWith(".pdf")) dto.setFileType("pdf");
+            else if (p.getFile().toLowerCase().endsWith(".zip")) dto.setFileType("zip");
+            else dto.setFileType("unknown");
+        }
+
+        if (p.getCreatedBy() != null) {
+            dto.setCreatorUsername(p.getCreatedBy().getUsername());
+            dto.setCreatorName(p.getCreatedBy().getName());
+        }
+
+        if (Hibernate.isInitialized(p.getAutores()) && p.getAutores() != null) {
+            dto.setAutores(p.getAutores().stream()
+                    .map(AuthorInfo::from)
+                    .collect(Collectors.toList()));
+        } else {
+            dto.setAutores(new ArrayList<>());
+        }
+
+        if (Hibernate.isInitialized(p.getTags()) && p.getTags() != null) {
+            dto.setTags(p.getTags().stream()
+                    .map(Tag::getName)
+                    .collect(Collectors.toList()));
+        } else {
+            dto.setTags(new ArrayList<>());
+        }
+
+        if (Hibernate.isInitialized(p.getRatings()) && p.getRatings() != null) {
+            if (!p.getRatings().isEmpty()) {
+                double average = p.getRatings().stream()
+                        .mapToInt(Rating::getValue)
+                        .average()
+                        .orElse(0.0);
+                dto.setRatingAverage(Math.round(average * 10.0) / 10.0);
+            } else {
+                dto.setRatingAverage(0.0);
+            }
+        } else {
+            dto.setRatingAverage(0.0);
+        }
 
         return dto;
     }
 
+
     // --- Inner DTOs ---
+
+    public static class AuthorInfo implements Serializable {
+        public String username;
+        public String name;
+
+        public static AuthorInfo from(User u) {
+            AuthorInfo info = new AuthorInfo();
+            info.username = u.getUsername();
+            info.name = u.getName();
+            return info;
+        }
+    }
 
     public static class RatingDTO implements Serializable {
         public int value;
@@ -58,7 +112,9 @@ public class PublicacaoDTO implements Serializable {
         public static RatingDTO from(Rating r) {
             RatingDTO d = new RatingDTO();
             d.value = r.getValue();
-            d.username = r.getUser().getUsername();
+            if (r.getUser() != null) {
+                d.username = r.getUser().getUsername();
+            }
             return d;
         }
     }
@@ -70,7 +126,9 @@ public class PublicacaoDTO implements Serializable {
         public static ComentarioDTO from(Comentario c) {
             ComentarioDTO d = new ComentarioDTO();
             d.text = c.getText();
-            d.username = c.getUser().getUsername();
+            if (c.getUser() != null) {
+                d.username = c.getUser().getUsername();
+            }
             d.createdAt = c.getCreatedAt();
             return d;
         }
@@ -90,33 +148,35 @@ public class PublicacaoDTO implements Serializable {
     }
 
     // --- Getters & Setters ---
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
-    public String getAutor() { return autor; }
-    public void setAutor(String autor) { this.autor = autor; }
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
     public String getAreaCientifica() { return areaCientifica; }
     public void setAreaCientifica(String areaCientifica) { this.areaCientifica = areaCientifica; }
     public String getDescricao() { return descricao; }
     public void setDescricao(String descricao) { this.descricao = descricao; }
     public String getFile() { return file; }
     public void setFile(String file) { this.file = file; }
+    public String getFileType() { return fileType; }
+    public void setFileType(String fileType) { this.fileType = fileType; }
     public String getResumo() { return resumo; }
     public void setResumo(String resumo) { this.resumo = resumo; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    public String getCreatedByName() { return createdByName; }
-    public void setCreatedByName(String createdByName) { this.createdByName = createdByName; }
     public Boolean getHidden() { return hidden; }
     public void setHidden(Boolean hidden) { this.hidden = hidden; }
-
-    public List<RatingDTO> getRatings() { return ratings; }
-    public void setRatings(List<RatingDTO> ratings) { this.ratings = ratings; }
-    public List<ComentarioDTO> getComentarios() { return comentarios; }
-    public void setComentarios(List<ComentarioDTO> comentarios) { this.comentarios = comentarios; }
-    public List<HistoricoEdicaoDTO> getHistoricoEdicoes() { return historicoEdicoes; }
-    public void setHistoricoEdicoes(List<HistoricoEdicaoDTO> historicoEdicoes) { this.historicoEdicoes = historicoEdicoes; }
+    public Double getRatingAverage() { return ratingAverage; }
+    public void setRatingAverage(Double ratingAverage) { this.ratingAverage = ratingAverage; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getCreatorUsername() { return creatorUsername; }
+    public void setCreatorUsername(String creatorUsername) { this.creatorUsername = creatorUsername; }
+    public String getCreatorName() { return creatorName; }
+    public void setCreatorName(String creatorName) { this.creatorName = creatorName; }
+    public List<AuthorInfo> getAutores() { return autores; }
+    public void setAutores(List<AuthorInfo> autores) { this.autores = autores; }
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }
 }

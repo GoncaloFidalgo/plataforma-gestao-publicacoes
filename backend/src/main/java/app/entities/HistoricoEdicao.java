@@ -19,7 +19,7 @@ public class HistoricoEdicao implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "editor_username")
-    private User editor; // Who made the edit
+    private User editor;
 
     @ManyToOne
     @JoinColumn(name = "publicacao_id", nullable = false)
