@@ -9,10 +9,13 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.validation.ConstraintViolationException;
 import org.hibernate.Hibernate;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
 
 @Stateless
 public class PublicacaoBean {
@@ -20,7 +23,23 @@ public class PublicacaoBean {
     @PersistenceContext
     private EntityManager entityManager;
 
-    public Publicacao create(String titulo, String tipo, List<String> authorUsernames, String areaCientifica, String descricao, String file, List<String> tagNames, String creatorUsername) throws MyConstraintViolationException, MyEntityNotFoundException {
+    private static final String UPLOAD_DIR = System.getProperty("java.io.tmpdir") + "/publications/";
+
+    public Publicacao create(String titulo, String tipo, List<String> authorUsernames, String areaCientifica, String descricao, InputStream fileContent, String extension, List<String> tagNames, String creatorUsername) throws MyConstraintViolationException, MyEntityNotFoundException, IOException {
+        // Guardar ficheiro
+        String storedFileName = null;
+        if (fileContent != null) {
+            String ext = extension != null ? extension : "";
+            storedFileName = UUID.randomUUID().toString() + ext;
+
+            java.nio.file.Path path = Paths.get(UPLOAD_DIR);
+
+            if (!Files.exists(path)) {
+                Files.createDirectories(path);
+            }
+
+            Files.copy(fileContent, path.resolve(storedFileName), StandardCopyOption.REPLACE_EXISTING);
+        }
         try {
             // Encontrar o criador
             User creator = entityManager.find(User.class, creatorUsername);
@@ -29,7 +48,7 @@ public class PublicacaoBean {
             }
 
             // Criar a publicação
-            Publicacao publicacao = new Publicacao(titulo, tipo, areaCientifica, descricao, file, creator);
+            Publicacao publicacao = new Publicacao(titulo, tipo, areaCientifica, descricao, storedFileName, creator);
 
             if (authorUsernames != null) {
                 for (String username : authorUsernames) {
@@ -43,7 +62,6 @@ public class PublicacaoBean {
             if (tagNames != null && !tagNames.isEmpty()) {
                 List<Tag> tagsToSet = new ArrayList<>();
                 for (String tagName : tagNames) {
-                    // Since Tag ID is the name, we try to find it
                     Tag tag = entityManager.find(Tag.class, tagName);
                     if (tag != null) {
                         tagsToSet.add(tag);
@@ -57,7 +75,13 @@ public class PublicacaoBean {
             throw new MyConstraintViolationException(e);
         }
     }
+    public File getFile(Long id) {
+        Publicacao p = find(id);
+        if (p == null || p.getFile() == null) return null;
 
+        File file = new File(UPLOAD_DIR, p.getFile());
+        return file.exists() ? file : null;
+    }
 
     public Publicacao find(Long id) {
         Publicacao p = entityManager.find(Publicacao.class, id);

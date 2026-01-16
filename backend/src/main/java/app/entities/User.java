@@ -14,7 +14,12 @@ import java.util.Set;
 @Entity
 @Table(name = "users",   uniqueConstraints = { @UniqueConstraint(columnNames = "email") })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-
+@NamedQueries({
+        @NamedQuery(
+                name = "getAllUsers",
+                query = "SELECT u FROM User u ORDER BY u.name" // JPQL
+        )
+})
 public class User extends Versionable implements Serializable {
     @Id
     @NotBlank
@@ -105,7 +110,6 @@ public class User extends Versionable implements Serializable {
         comentarios = new ArrayList<>();
         ratings = new ArrayList<>();
         tagsSubscritas = new HashSet<>();
-
     }
 
 }

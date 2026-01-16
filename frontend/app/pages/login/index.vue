@@ -112,6 +112,8 @@ const handleLogin = async () => {
 
 
     const role = authStore.currentUser?.role || 'ADMINISTRATOR'
+
+
     const redirectPath = getRedirectPath(role)
 
     toast.add({ title: 'Welcome back!', color: 'green', icon: 'i-heroicons-check-circle' })

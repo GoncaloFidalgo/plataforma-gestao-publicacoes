@@ -11,12 +11,11 @@ import jakarta.persistence.NamedQuery;
                 query = "SELECT s FROM Administrator s ORDER BY s.name" // JPQL
         )
 })
-public class Administrator extends User{
+public class Administrator extends Responsavel{
     public Administrator() {
         super();
     }
     public Administrator(String username, String password, String name, String email) {
         super(username, password, name, email);
     }
-
 }

@@ -18,13 +18,13 @@ Content-Type: application/json
 }
 --WebAppBoundary
 Content-Disposition: form-data; name="file"; filename="test.zip"
-Content-Type: application/pdf
+Content-Type: application/zip
 
-< ./test.pdf
+< ./test.zip
 --WebAppBoundary--
 
 ### Download Publication File
-GET http://localhost:8080/academics/api/publications/2/ficheiro
+GET http://localhost:8080/academics/api/publications/3/ficheiro
 Authorization: Bearer {{auth_token}}
 
 ### Get All Publications (Search)
