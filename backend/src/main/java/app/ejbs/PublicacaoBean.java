@@ -16,6 +16,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import jakarta.ejb.TransactionAttribute;
+import jakarta.ejb.TransactionAttributeType;
 
 @Stateless
 public class PublicacaoBean {
@@ -192,16 +194,19 @@ public class PublicacaoBean {
         return publicacao;
     }
 
-    public void updateResumo(Long id, String novoResumo) {
-        Publicacao p = entityManager.find(Publicacao.class, id);
-        if (p != null) {
-            p.setResumo(novoResumo);
-        }
-    }
+
 
 
     public void delete(Long id) {
         var publicacao = entityManager.find(Publicacao.class, id);
         if (publicacao != null) entityManager.remove(publicacao);
+    }
+
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public void updateResumo(Long id, String novoResumo) {
+        Publicacao p = entityManager.find(Publicacao.class, id);
+        if (p != null) {
+            p.setResumo(novoResumo);
+        }
     }
 }

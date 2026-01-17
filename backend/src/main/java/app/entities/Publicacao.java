@@ -6,6 +6,8 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import jakarta.persistence.Column;
+import jakarta.persistence.Lob;
 
 @Entity
 @Table(name = "publicacoes")
@@ -34,10 +36,12 @@ public class Publicacao implements Serializable {
 
     private String file;
 
+    @Column(length = 10000)
     private String resumo;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
 
     @ManyToOne
     @JoinColumn(name = "created_by_username", referencedColumnName = "username")

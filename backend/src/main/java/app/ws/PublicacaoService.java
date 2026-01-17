@@ -18,7 +18,9 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import java.util.logging.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,6 +50,8 @@ public class PublicacaoService {
     @Context
     private SecurityContext securityContext;
 
+    private static final Logger logger = Logger.getLogger(PublicacaoService.class.getName());
+    private static final String UPLOAD_DIR = System.getProperty("java.io.tmpdir") + "/publications/";
 
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -216,45 +220,80 @@ public class PublicacaoService {
     @RolesAllowed({"Administrator", "Responsavel", "Colaborador"})
     public Response gerarResumoAutomatico(@PathParam("id") Long id) {
         try {
-            // 1. Buscar a publicação
             Publicacao publicacao = publicacaoBean.find(id);
             if (publicacao == null) {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
 
-            // 2. Verificar se tem conteúdo para resumir
-            // Nota: Ler o PDF (publicacao.getFile()) requer bibliotecas extra (como PDFBox).
-            // Para já, vamos resumir com base no Título e Descrição existentes.
-            String descricao = publicacao.getDescricao();
-            if (descricao == null || descricao.isBlank()) {
+            StringBuilder conteudoCompleto = new StringBuilder();
+            if (publicacao.getDescricao() != null) {
+                conteudoCompleto.append(publicacao.getDescricao()).append("\n");
+            }
+
+            if (publicacao.getFile() != null && publicacao.getFile().toLowerCase().endsWith(".pdf")) {
+                String pdfText = extractContentFromPdf(publicacao.getFile());
+                if (pdfText != null && !pdfText.isBlank()) {
+                    conteudoCompleto.append("\n--- Excerto do PDF ---\n").append(pdfText);
+                }
+            }
+
+            String textoFinal = conteudoCompleto.toString();
+
+            if (textoFinal.isBlank()) {
                 return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("{\"mensagem\": \"A publicação não tem descrição para resumir.\"}")
+                        .entity("{\"mensagem\": \"Não há conteúdo suficiente (descrição ou PDF) para gerar um resumo.\"}")
                         .build();
             }
 
-            String resumoGerado = ollamaBean.generateSummary(publicacao.getTitulo(), descricao);
+            String resumoGerado = ollamaBean.generateSummary(publicacao.getTitulo(), textoFinal);
 
-            // 4. Guardar na Base de Dados (Publicacao.java já tem o campo 'resumo')
-            // Precisamos de um método no PublicacaoBean para atualizar apenas o resumo ou usar o update geral.
-            // Vamos assumir uma atualização direta via PublicacaoBean ou setar e fazer flush se estiver numa transação.
-
-            // Opção rápida: Atualizar via PublicacaoBean (precisará criar este método lá se não quiser usar o update gigante)
-            publicacao.setResumo(resumoGerado);
-            // O EntityManager deve sincronizar isto automaticamente no fim da transação do PublicacaoBean,
-            // mas como estamos no Service, idealmente chamamos um método 'saveResumo' no Bean.
             publicacaoBean.updateResumo(id, resumoGerado);
 
             return Response.ok()
-                    .entity("{\"resumo\": \"" + resumoGerado.replace("\"", "\\\"") + "\"}")
+                    .entity("{\"resumo\": \"" + resumoGerado.replace("\"", "\\\"").replace("\n", " ") + "\"}")
                     .build();
 
         } catch (Exception e) {
             e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"mensagem\": \"Erro ao processar resumo.\"}")
+                    .entity("{\"mensagem\": \"Erro ao processar resumo: " + e.getMessage() + "\"}")
                     .build();
         }
     }
+
+    /**
+     * Método auxiliar para extrair texto do PDF
+     */
+    private String extractContentFromPdf(String filename) {
+        try {
+            java.nio.file.Path filePath = Paths.get(UPLOAD_DIR, filename);
+            File file = filePath.toFile();
+
+            if (!file.exists()) {
+                logger.warning("Ficheiro PDF não encontrado para resumo: " + filename);
+                return null;
+            }
+
+            try (PDDocument document = PDDocument.load(file)) {
+                PDFTextStripper stripper = new PDFTextStripper();
+
+
+                stripper.setStartPage(1);
+                stripper.setEndPage(5);
+
+                String text = stripper.getText(document);
+
+                if (text.length() > 4000) {
+                    text = text.substring(0, 4000) + "... [texto truncado]";
+                }
+                return text;
+            }
+        } catch (IOException e) {
+            logger.severe("Erro ao ler PDF (" + filename + "): " + e.getMessage());
+            return null;
+        }
+    }
+
 
 
 
