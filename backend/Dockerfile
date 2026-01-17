@@ -17,5 +17,6 @@ ADD --chown=jboss:root --chmod=771 https://raw.githubusercontent.com/dmp593/dock
 # Downloads PostgreSQL Driver
 ADD --chown=jboss:root --chmod=664 https://jdbc.postgresql.org/download/postgresql-${POSTGRES_DRIVER_VERSION}.jar bin
 
+COPY target/academics.war ${DEPLOYMENTS_DIR}/academics.war
 # Starts the Wildfly Web Server
 ENTRYPOINT ${WILDFLY_HOME}/bin/start-wildfly.sh

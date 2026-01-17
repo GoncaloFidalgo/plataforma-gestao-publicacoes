@@ -11,12 +11,11 @@ import jakarta.persistence.NamedQuery;
                 query = "SELECT s FROM Colaborador s ORDER BY s.name" // JPQL
         )
 })
-public class Colaborador extends  User{
-    public Colaborador(String username, String password, String name, String email) {
-        super(username, password, name, email);
-    }
-
+public class Colaborador extends User{
     public Colaborador() {
         super();
+    }
+    public Colaborador(String username, String password, String name, String email) {
+        super(username, password, name, email);
     }
 }

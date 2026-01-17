@@ -18,8 +18,6 @@ public class Publicacao implements Serializable {
     @NotBlank
     private String titulo;
 
-    // Use a relationship for Authors.
-    // Since Colaborador extends User (Single Table), this works fine.
     @ManyToMany
     @JoinTable(
             name = "publicacao_autores",
