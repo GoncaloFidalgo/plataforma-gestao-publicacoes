@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
+import app.ejbs.OllamaBean;
 @Path("publications")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -41,6 +41,9 @@ public class PublicacaoService {
 
     @EJB
     private UserBean userBean;
+
+    @EJB
+    private OllamaBean ollamaBean;
 
     @Context
     private SecurityContext securityContext;
@@ -222,6 +225,54 @@ public class PublicacaoService {
                 .collect(Collectors.toList());
         return Response.ok(history).build();
     }
+
+    @POST
+    @Path("{id}/resumir")
+    @RolesAllowed({"Administrator", "Responsavel", "Colaborador"})
+    public Response gerarResumoAutomatico(@PathParam("id") Long id) {
+        try {
+            // 1. Buscar a publicação
+            Publicacao publicacao = publicacaoBean.find(id);
+            if (publicacao == null) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+
+            // 2. Verificar se tem conteúdo para resumir
+            // Nota: Ler o PDF (publicacao.getFile()) requer bibliotecas extra (como PDFBox).
+            // Para já, vamos resumir com base no Título e Descrição existentes.
+            String descricao = publicacao.getDescricao();
+            if (descricao == null || descricao.isBlank()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("{\"mensagem\": \"A publicação não tem descrição para resumir.\"}")
+                        .build();
+            }
+
+            String resumoGerado = ollamaBean.generateSummary(publicacao.getTitulo(), descricao);
+
+            // 4. Guardar na Base de Dados (Publicacao.java já tem o campo 'resumo')
+            // Precisamos de um método no PublicacaoBean para atualizar apenas o resumo ou usar o update geral.
+            // Vamos assumir uma atualização direta via PublicacaoBean ou setar e fazer flush se estiver numa transação.
+
+            // Opção rápida: Atualizar via PublicacaoBean (precisará criar este método lá se não quiser usar o update gigante)
+            publicacao.setResumo(resumoGerado);
+            // O EntityManager deve sincronizar isto automaticamente no fim da transação do PublicacaoBean,
+            // mas como estamos no Service, idealmente chamamos um método 'saveResumo' no Bean.
+            publicacaoBean.updateResumo(id, resumoGerado);
+
+            return Response.ok()
+                    .entity("{\"resumo\": \"" + resumoGerado.replace("\"", "\\\"") + "\"}")
+                    .build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"mensagem\": \"Erro ao processar resumo.\"}")
+                    .build();
+        }
+    }
+
+
+
 
    /* @PUT
     @Path("/{id}")

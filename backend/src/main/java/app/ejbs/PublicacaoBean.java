@@ -62,7 +62,7 @@ public class PublicacaoBean {
     public Publicacao find(Long id) {
         Publicacao p = entityManager.find(Publicacao.class, id);
         if (p != null) {
-            // Initializar as coleções
+                // Initializar as coleções
             Hibernate.initialize(p.getTags());
             Hibernate.initialize(p.getComentarios());
             Hibernate.initialize(p.getRatings());
@@ -168,6 +168,12 @@ public class PublicacaoBean {
         return publicacao;
     }
 
+    public void updateResumo(Long id, String novoResumo) {
+        Publicacao p = entityManager.find(Publicacao.class, id);
+        if (p != null) {
+            p.setResumo(novoResumo);
+        }
+    }
 
 
     public void delete(Long id) {
