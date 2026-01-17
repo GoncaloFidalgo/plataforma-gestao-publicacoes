@@ -1,0 +1,123 @@
+### LOGIN - Get JWT Token (Use this first!)
+POST http://localhost:8080/academics/api/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "admin",
+  "password": "123"
+}
+### Get All administrators
+GET http://localhost:8080/academics/api/administrators
+Accept: application/json
+
+
+
+### SET NEW PASSWORD
+PATCH http://localhost:8080/academics/api/auth/set-password
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NTk5MzYyMywiZXhwIjoxNzY1OTk3MjIzfQ.sjKL_mzYJP_nzLPXerCEmCvyulcXN6o5JukGEUlxgsSJ47x6JV2DdD0AUMusJ0vB
+
+{
+  "oldPassword": "123",
+  "newPassword": "1234",
+  "confirmPassword": "1234"
+}
+
+### RECOVER PASSWORD
+POST http://localhost:8080/academics/api/auth/recover-password
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "banana@example.com"
+}
+
+### RESET PASSWORD
+PUT http://localhost:8080/academics/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "550e8400-e29b-41d4-a716-446655440000",
+  "nova_password": "1234"
+}
+
+### Create User (Administrator only)
+POST http://localhost:8080/academics/api/users
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
+
+
+{
+  "name": "João Silva",
+  "username": "joao",
+  "password": "joaosilva2003",
+  "role": 3,
+  "email": "joao.silva@gmail.com",
+  "active": true
+}
+
+
+### Update User (Administrator only)
+PUT http://localhost:8080/academics/api/users/joao
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzU1MzM4NywiZXhwIjoxNzY3NTU2OTg3fQ.KPW4PBBdMqnnihkUrCj1N2NKVvvY-mM0motn-2YUoMLAlU-tEF36vA-cswc1xlmN
+
+
+{
+  "username": "joao",
+  "email": "joao.silva@gmail.com",
+  "active": false
+}
+
+### Get Users
+GET http://localhost:8080/academics/api/users
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1MjMzNCwiZXhwIjoxNzY3NDU1OTM0fQ.qvflgzxJ-iMRjUgFOx_s4qOSIfRRP5vV0ZsRvTTCyQb40JuMvcWNhEipVoivubqO
+
+### Delete User (Administrator only)
+DELETE http://localhost:8080/academics/api/users/joao
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1MjMzNCwiZXhwIjoxNzY3NDU1OTM0fQ.qvflgzxJ-iMRjUgFOx_s4qOSIfRRP5vV0ZsRvTTCyQb40JuMvcWNhEipVoivubqO
+
+### Suspend User (Administrator only)
+PATCH http://localhost:8080/academics/api/users/joao/status
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
+
+{
+  "active": false,
+  "motive": "Violação das políticas de utilização"
+}
+
+### Activate User (Administrator only)
+PATCH http://localhost:8080/academics/api/users/joao/status
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
+
+{
+  "active": true
+}
+
+### Update User Role (Administrator only)
+PATCH http://localhost:8080/academics/api/users/joao/role
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
+
+
+{
+  "role": 2
+}
+
+### Get All Users (Administrator only)
+GET http://localhost:8080/academics/api/users
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
+Authorization: Bearer <eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbjEiLCJpYXQiOjE3NjIzOTM0MDYsImV4cCI6MTc2MjM5NzAwNn0.TgbasV_mzErHD_aIUfdKwR-wJ3_XMI0lCzIlhNjkBhglHC-h5xjr8n0yQoWmzg3z>
+
+### Get User by Username (Administrator only)
+GET http://localhost:8080/academics/api/users/joao
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
+
+
+

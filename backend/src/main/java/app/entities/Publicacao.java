@@ -2,13 +2,10 @@ package app.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Table(name = "publicacoes")
@@ -21,11 +18,21 @@ public class Publicacao implements Serializable {
     @NotBlank
     private String titulo;
 
-    private String autor; // Kept as original (could be migrated to User later if needed)
+    // Use a relationship for Authors.
+    // Since Colaborador extends User (Single Table), this works fine.
+    @ManyToMany
+    @JoinTable(
+            name = "publicacao_autores",
+            joinColumns = @JoinColumn(name = "publicacao_id"),
+            inverseJoinColumns = @JoinColumn(name = "autor_username")
+    )
+    private List<Colaborador> autores = new ArrayList<>();
 
     private String areaCientifica;
 
     private String descricao;
+
+    private String tipo;
 
     private String file;
 
@@ -34,16 +41,11 @@ public class Publicacao implements Serializable {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    // Kept purely for historical record of who uploaded it originally
-    @Column(name = "created_by")
-    private String createdBy;
-
-    @Column(name = "created_by_name")
-    private String createdByName;
+    @ManyToOne
+    @JoinColumn(name = "created_by_username", referencedColumnName = "username")
+    private User createdBy;
 
     private Boolean hidden = false;
-
-    // --- New Relationships ---
 
     @OneToMany(mappedBy = "publicacao", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Rating> ratings = new ArrayList<>();
@@ -58,35 +60,42 @@ public class Publicacao implements Serializable {
     @JoinTable(
             name = "publicacao_tags",
             joinColumns = @JoinColumn(name = "publicacao_id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id")
+            inverseJoinColumns = @JoinColumn(name = "tag_name")
     )
-    private Set<Tag> tags = new HashSet<>();
+    private List<Tag> tags = new ArrayList<>();
 
     public Publicacao() {
     }
 
-    public Publicacao(String titulo, String autor, String areaCientifica, String descricao, String file, String resumo, String createdBy, String createdByName) {
+    public Publicacao(String titulo,  String tipo, String areaCientifica, String descricao, String file,  User createdBy) {
         this.titulo = titulo;
-        this.autor = autor;
+        this.tipo = tipo;
         this.areaCientifica = areaCientifica;
         this.descricao = descricao;
         this.file = file;
-        this.resumo = resumo;
         this.createdBy = createdBy;
-        this.createdByName = createdByName;
         this.createdAt = LocalDateTime.now();
         this.hidden = false;
     }
 
+    // Helper methods
 
     public void addComentario(Comentario comentario) {
         comentarios.add(comentario);
         comentario.setPublicacao(this);
     }
 
+    public void removeCometario(Comentario comentario) {
+        comentarios.remove(comentario);
+    }
+
     public void addRating(Rating rating) {
         ratings.add(rating);
         rating.setPublicacao(this);
+    }
+
+    public void removeRating(Rating rating) {
+        ratings.remove(rating);
     }
 
     public void addTag(Tag tag) {
@@ -99,6 +108,14 @@ public class Publicacao implements Serializable {
         tag.getPublicacoes().remove(this);
     }
 
+    public void addAutor(Colaborador autor) {
+        autores.add(autor);
+    }
+
+    public void removeAutor(Colaborador autor) {
+        autores.remove(autor);
+    }
+
     // Getters and Setters
 
     public Long getId() { return id; }
@@ -107,8 +124,8 @@ public class Publicacao implements Serializable {
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
 
-    public String getAutor() { return autor; }
-    public void setAutor(String autor) { this.autor = autor; }
+    public List<Colaborador> getAutores() { return autores; }
+    public void setAutores(List<Colaborador> autores) { this.autores = autores; }
 
     public String getAreaCientifica() { return areaCientifica; }
     public void setAreaCientifica(String areaCientifica) { this.areaCientifica = areaCientifica; }
@@ -125,11 +142,8 @@ public class Publicacao implements Serializable {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public String getCreatedBy() { return createdBy; }
-    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-
-    public String getCreatedByName() { return createdByName; }
-    public void setCreatedByName(String createdByName) { this.createdByName = createdByName; }
+    public User getCreatedBy() { return createdBy; }
+    public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
 
     public Boolean getHidden() { return hidden; }
     public void setHidden(Boolean hidden) { this.hidden = hidden; }
@@ -143,6 +157,14 @@ public class Publicacao implements Serializable {
     public List<HistoricoEdicao> getHistoricoEdicoes() { return historicoEdicoes; }
     public void setHistoricoEdicoes(List<HistoricoEdicao> historicoEdicoes) { this.historicoEdicoes = historicoEdicoes; }
 
-    public Set<Tag> getTags() { return tags; }
-    public void setTags(Set<Tag> tags) { this.tags = tags; }
+    public List<Tag> getTags() { return tags; }
+    public void setTags(List<Tag> tags) { this.tags = tags; }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
 }

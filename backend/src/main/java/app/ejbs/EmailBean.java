@@ -2,13 +2,9 @@ package app.ejbs;
 
 import jakarta.annotation.Resource;
 import jakarta.ejb.Stateless;
-import jakarta.mail.Message;
-import jakarta.mail.MessagingException;
-import jakarta.mail.Session;
-import jakarta.mail.Transport;
+import jakarta.mail.*;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
-
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
