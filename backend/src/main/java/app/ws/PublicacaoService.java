@@ -45,7 +45,6 @@ public class PublicacaoService {
     @Context
     private SecurityContext securityContext;
 
-    private static final String UPLOAD_DIR = System.getProperty("java.io.tmpdir") + "/publications/";
 
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -73,28 +72,16 @@ public class PublicacaoService {
             InputPart filePart = fileParts.get(0);
 
             String originalName = getFileName(filePart.getHeaders());
-            String extension = "";
-            int i = originalName.lastIndexOf('.');
-            if (i > 0) {
-                extension = originalName.substring(i);
-            }
+            String extension = getExtension(originalName);
+
 
             if (!extension.equalsIgnoreCase(".pdf") && !extension.equalsIgnoreCase(".zip")) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity("File must be PDF or ZIP").build();
             }
 
-            // Guardar ficheiro
-            String storedFileName = UUID.randomUUID().toString() + extension;
-            java.nio.file.Path path = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(path)) {
-                Files.createDirectories(path);
-            }
-
-            InputStream inputStream = filePart.getBody(InputStream.class, null);
-            Files.copy(inputStream, path.resolve(storedFileName), StandardCopyOption.REPLACE_EXISTING);
-
             // Criar a publicação na BD
+            InputStream inputStream = filePart.getBody(InputStream.class, null);
             String creatorUsername = securityContext.getUserPrincipal().getName();
 
             Publicacao publicacao = publicacaoBean.create(
@@ -103,7 +90,8 @@ public class PublicacaoService {
                     createDTO.getAutores(),
                     createDTO.getArea_cientifica(),
                     createDTO.getDescricao(),
-                    storedFileName,
+                    inputStream,
+                    extension,
                     createDTO.getTags(),
                     creatorUsername
             );
@@ -139,20 +127,17 @@ public class PublicacaoService {
                     .build();
         }
 
-        java.nio.file.Path filePath = Paths.get(UPLOAD_DIR, publicacao.getFile());
-        File file = filePath.toFile();
+        File file = publicacaoBean.getFile(id);
 
-        if (!file.exists()) {
+        if (file == null || !file.exists()) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("File not found on server")
-                    .build();
+                    .entity("File not found on server").build();
         }
 
         String extension = getExtension(publicacao.getFile());
         String sanitizedTitle = publicacao.getTitulo().replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
         String downloadName = sanitizedTitle + extension;
 
-        // Ver se é pdf ou zip
         String contentType = MediaType.APPLICATION_OCTET_STREAM;
         if (extension.equalsIgnoreCase(".pdf")) {
             contentType = "application/pdf";
