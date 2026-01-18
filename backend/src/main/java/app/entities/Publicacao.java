@@ -26,11 +26,15 @@ public class Publicacao implements Serializable {
     )
     private List<Colaborador> autores = new ArrayList<>();
 
-    private String areaCientifica;
-
     private String descricao;
 
-    private String tipo;
+    @ManyToOne
+    @JoinColumn(name = "tipo_id") // Links to PublicationType.id
+    private PublicationType tipo;
+
+    @ManyToOne
+    @JoinColumn(name = "area_id") // Links to ScientificArea.id
+    private ScientificArea areaCientifica;
 
     private String filename;
 
@@ -65,7 +69,7 @@ public class Publicacao implements Serializable {
     public Publicacao() {
     }
 
-    public Publicacao(String titulo, String tipo, String areaCientifica, String descricao, String filename, User createdBy) {
+    public Publicacao(String titulo, PublicationType tipo, ScientificArea areaCientifica, String descricao, String filename, User createdBy) {
         this.titulo = titulo;
         this.tipo = tipo;
         this.areaCientifica = areaCientifica;
@@ -119,14 +123,19 @@ public class Publicacao implements Serializable {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
+    public PublicationType getTipo() { return tipo; }
+    public void setTipo(PublicationType tipo) { this.tipo = tipo; }
+
+    public ScientificArea getAreaCientifica() { return areaCientifica; }
+    public void setAreaCientifica(ScientificArea areaCientifica) { this.areaCientifica = areaCientifica; }
+
+
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
 
     public List<Colaborador> getAutores() { return autores; }
     public void setAutores(List<Colaborador> autores) { this.autores = autores; }
 
-    public String getAreaCientifica() { return areaCientifica; }
-    public void setAreaCientifica(String areaCientifica) { this.areaCientifica = areaCientifica; }
 
     public String getDescricao() { return descricao; }
     public void setDescricao(String descricao) { this.descricao = descricao; }
@@ -158,11 +167,4 @@ public class Publicacao implements Serializable {
     public List<Tag> getTags() { return tags; }
     public void setTags(List<Tag> tags) { this.tags = tags; }
 
-    public String getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(String tipo) {
-        this.tipo = tipo;
-    }
 }

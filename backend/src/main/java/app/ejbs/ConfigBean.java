@@ -1,6 +1,8 @@
 package app.ejbs;
 
 import app.entities.Administrator;
+import app.entities.PublicationType;
+import app.entities.ScientificArea;
 import app.entities.User;
 import app.exceptions.MyConstraintViolationException;
 import app.exceptions.MyEntityExistsException;
@@ -9,6 +11,8 @@ import jakarta.annotation.PostConstruct;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Singleton;
 import jakarta.ejb.Startup;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -21,108 +25,86 @@ import java.util.logging.Logger;
 @Startup
 @Singleton
 public class ConfigBean {
-    @EJB
-    private UserBean userBean;
+    @PersistenceContext
+    private EntityManager em;
 
-    @EJB
-    private TagBean tagBean;
-
-    @EJB
-    private PublicacaoBean publicacaoBean;
-
+    @EJB private UserBean userBean;
+    @EJB private TagBean tagBean;
+    @EJB private PublicacaoBean publicacaoBean;
+    @EJB private ReferenceBean referenceBean;
 
     private static final Logger logger = Logger.getLogger(ConfigBean.class.getName());
 
     @PostConstruct
     public void populateDB() {
-        // --- 1. USERS ---
         try {
-            // admin
-            if (userBean.find("admin") == null) {
-                userBean.createUser("admin","123","Admin Principal","admin@example.com",1,true
-                );
-                logger.info("Created Administrator: admin");
-            }
+            // 1. Users
+            if (userBean.find("admin") == null) userBean.createUser("admin", "123", "Admin", "admin@e.com", 1, true);
+            if (userBean.find("resp") == null) userBean.createUser("resp", "123", "Resp", "resp@e.com", 2, true);
+            if (userBean.find("colab") == null) userBean.createUser("colab", "123", "Colab", "colab@e.com", 3, true);
 
-            // responsavel
-            if (userBean.find("resp") == null) {
-                userBean.createUser("resp","123","Responsavel Content","resp@example.com",2,true);
-                logger.info("Created Responsavel: resp");
-            }
+            // 2. Tags
+            try { tagBean.create("Java", "Desc", "CS"); } catch (Exception e) {}
+            try { tagBean.create("AI", "Desc", "CS"); } catch (Exception e) {}
 
-            // colaborador
-            if (userBean.find("colab") == null) {
-                userBean.createUser("colab","123","Joao Colaborador","colab@example.com",3,true);
-                logger.info("Created Colaborador: colab");
-            }
-            // --- 2. TAGS ---
-            try {
-                tagBean.create("Java", "Java Programming Language", "Computer Science");
-            } catch (Exception e) {  }
+            // 3. Types & Areas
+            PublicationType tutorialType = findOrCreateType("Tutorial");
+            PublicationType thesisType = findOrCreateType("Thesis");
+            ScientificArea csArea = findOrCreateArea("Computer Science");
 
-            try {
-                tagBean.create("AI", "Artificial Intelligence", "Computer Science");
-            } catch (Exception e) {  }
-
-            try {
-                tagBean.create("History", "World History", "Humanities");
-            } catch (Exception e) {  }
-
-            // --- 3. PUBLICATIONS ---
-
-            // Check if publication exists by searching for title to avoid duplicates on restart
+            // 4. Publications
             if (publicacaoBean.findAll(null, "Introduction to Java", null, null, null, null).isEmpty()) {
-                // Create a dummy stream to mimic a file upload
-                InputStream content = getClass().getClassLoader().getResourceAsStream("test.pdf");
-                try {
+                InputStream content = new ByteArrayInputStream("Content".getBytes(StandardCharsets.UTF_8));
+
                 publicacaoBean.create(
                         "Introduction to Java",
-                        "Tutorial",
-                        Arrays.asList("colab"), // Author usernames
-                        "Computer Science",
-                        "A comprehensive beginner's guide to Java development.",
-                        content, // Pass stream to trigger save logic
-                        ".pdf",  // Pass extension
-                        Arrays.asList("Java"), // Tags
-                        "colab" // Creator username
+                        tutorialType.getId(),
+                        Arrays.asList("colab"),
+                        csArea.getId(),
+                        "Desc",
+                        content, ".pdf",
+                        Arrays.asList("Java"),
+                        "colab"
                 );
-                logger.info("Created Publication: Introduction to Java");
-            } finally {
-                // Good practice to close FileInputStream if we opened it
-                if (content instanceof FileInputStream) {
-                    try { content.close(); } catch (Exception ignore) {}
-                }
-            }
             }
 
             if (publicacaoBean.findAll(null, "The Future of AI", null, null, null, null).isEmpty()) {
-                InputStream content = getClass().getClassLoader().getResourceAsStream("test.zip");
+                InputStream content = getClass().getClassLoader().getResourceAsStream("test.pdf");
+                if (content == null) content = new ByteArrayInputStream("Dummy PDF".getBytes());
 
-                try {
-                    publicacaoBean.create(
-                            "The Future of AI",
-                            "Thesis",
-                            Arrays.asList("resp", "colab"), // Multiple authors
-                            "Computer Science",
-                            "An in-depth analysis of Neural Networks and LLMs.",
-                            content,
-                            ".zip",
-                            Arrays.asList("AI", "Java"),
-                            "resp"
-                    );
-                    logger.info("Created Publication: The Future of AI");
-                } finally {
-                    // Good practice to close FileInputStream if we opened it
-                    if (content instanceof FileInputStream) {
-                        try { content.close(); } catch (Exception ignore) {}
-                    }
-                }
+                publicacaoBean.create(
+                        "The Future of AI",
+                        thesisType.getId(),
+                        Arrays.asList("resp"),
+                        csArea.getId(),
+                        "Desc",
+                        content, ".pdf",
+                        Arrays.asList("AI"),
+                        "resp"
+                );
             }
 
-        } catch (MyConstraintViolationException e) {
-            logger.severe("Error populating DB (Constraint Violation): " + e.getMessage());
         } catch (Exception e) {
-            logger.severe("Error populating DB: " + e.getMessage());
+            logger.severe("ConfigBean Error: " + e.getMessage());
         }
+    }
+    private PublicationType findOrCreateType(String name) {
+        List<PublicationType> list = em.createQuery("SELECT t FROM PublicationType t WHERE t.name = :name", PublicationType.class)
+                .setParameter("name", name).getResultList();
+        if (!list.isEmpty()) return list.get(0);
+
+        PublicationType t = new PublicationType(name);
+        em.persist(t);
+        return t;
+    }
+
+    private ScientificArea findOrCreateArea(String name) {
+        List<ScientificArea> list = em.createQuery("SELECT s FROM ScientificArea s WHERE s.name = :name", ScientificArea.class)
+                .setParameter("name", name).getResultList();
+        if (!list.isEmpty()) return list.get(0);
+
+        ScientificArea a = new ScientificArea(name);
+        em.persist(a);
+        return a;
     }
 }

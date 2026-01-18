@@ -5,8 +5,8 @@ import java.util.List;
 
 public class PublicacaoCreateDTO implements Serializable {
     private String titulo;
-    private String tipo;
-    private String area_cientifica;
+    private Long tipoId;
+    private Long areaId;
     private String descricao;
     private List<String> autores;
     private List<String> tags;
@@ -18,11 +18,11 @@ public class PublicacaoCreateDTO implements Serializable {
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
 
-    public String getTipo() { return tipo; }
-    public void setTipo(String tipo) { this.tipo = tipo; }
+    public Long getTipoId() { return tipoId; }
+    public void setTipoId(Long tipoId) { this.tipoId = tipoId; }
 
-    public String getArea_cientifica() { return area_cientifica; }
-    public void setArea_cientifica(String area_cientifica) { this.area_cientifica = area_cientifica; }
+    public Long getAreaId() { return areaId; }
+    public void setAreaId(Long areaId) { this.areaId = areaId; }
 
     public String getDescricao() { return descricao; }
     public void setDescricao(String descricao) { this.descricao = descricao; }

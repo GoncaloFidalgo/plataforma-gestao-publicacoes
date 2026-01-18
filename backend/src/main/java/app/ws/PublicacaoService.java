@@ -80,9 +80,9 @@ public class PublicacaoService {
 
             Publicacao publicacao = publicacaoBean.create(
                     createDTO.getTitulo(),
-                    createDTO.getTipo(),
+                    createDTO.getTipoId(),
                     createDTO.getAutores(),
-                    createDTO.getArea_cientifica(),
+                    createDTO.getAreaId(),
                     createDTO.getDescricao(),
                     inputStream,
                     extension,

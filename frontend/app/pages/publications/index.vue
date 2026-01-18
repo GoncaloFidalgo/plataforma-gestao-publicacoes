@@ -7,7 +7,12 @@
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Publications</h1>
         <p class="text-gray-500 text-sm">Browse and download academic resources</p>
       </div>
-      <!-- Placeholder for future "Upload" button -->
+      <UButton
+          icon="i-heroicons-cloud-arrow-up"
+          color="primary"
+          label="Upload"
+          to="/publications/create"
+      />
     </div>
 
     <!-- Table -->

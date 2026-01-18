@@ -1,4 +1,51 @@
-### Upload Publication (Multipart)
+### --- REFERENCE DATA (TYPES & AREAS) ---
+
+### 2. Get All Publication Types
+GET http://localhost:8080/academics/api/references/types
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+> {%
+    // Capture the first Type ID to use in the upload
+    if (response.body.length > 0) {
+        client.global.set("type_id", response.body[0].id);
+    }
+%}
+
+### Create New Type (Optional)
+POST http://localhost:8080/academics/api/references/types
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "name": "Dissertation"
+}
+
+### 3. Get All Scientific Areas
+GET http://localhost:8080/academics/api/references/areas
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+> {%
+    // Capture the first Area ID to use in the upload
+    if (response.body.length > 0) {
+        client.global.set("area_id", response.body[0].id);
+    }
+%}
+
+### Create New Area (Optional)
+POST http://localhost:8080/academics/api/references/areas
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "name": "Physics"
+}
+
+### --- PUBLICATIONS ---
+
+### 4. Upload Publication (Multipart)
+# Note: Run requests #2 and #3 first to populate {{type_id}} and {{area_id}}
 POST http://localhost:8080/academics/api/publications
 Authorization: Bearer {{auth_token}}
 Content-Type: multipart/form-data; boundary=WebAppBoundary
@@ -9,30 +56,34 @@ Content-Type: application/json
 
 {
   "titulo": "Deep Learning Thesis",
-  "tipo": "Thesis",
-  "area_cientifica": "Computer Science",
+  "tipoId": {{type_id}},
+  "areaId": {{area_id}},
   "descricao": "Research about Neural Networks",
   "autores": ["admin"],
   "tags": ["Java"],
   "hidden": false
 }
 --WebAppBoundary
-Content-Disposition: form-data; name="file"; filename="test.zip"
-Content-Type: application/zip
+Content-Disposition: form-data; name="file"; filename="test.pdf"
+Content-Type: application/pdf
 
-< ./test.zip
+< ./test.pdf
 --WebAppBoundary--
 
-### Download Publication File
-GET http://localhost:8080/academics/api/publications/3/ficheiro
-Authorization: Bearer {{auth_token}}
+> {%
+    client.global.set("publication_id", response.body.id);
+%}
 
-### Get All Publications (Search)
+### 5. Get All Publications (Search)
 GET http://localhost:8080/academics/api/publications
 Authorization: Bearer {{auth_token}}
 Accept: application/json
 
-### Get Publication Details
-GET http://localhost:8080/academics/api/publications/1
+### 6. Get Publication Details
+GET http://localhost:8080/academics/api/publications/{{publication_id}}
 Authorization: Bearer {{auth_token}}
 Accept: application/json
+
+### 7. Download Publication File
+GET http://localhost:8080/academics/api/publications/{{publication_id}}/ficheiro
+Authorization: Bearer {{auth_token}}

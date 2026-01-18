@@ -53,11 +53,37 @@ export const usePublicationStore = defineStore('publications', () => {
             throw error
         }
     }
+    const create = async (form) => {
+        const formData = new FormData()
 
+        // 1. Construct Metadata JSON
+        const metadata = {
+            titulo: form.titulo,
+            tipo: form.tipo,
+            area_cientifica: form.areaCientifica,
+            descricao: form.descricao,
+            // Convert comma-separated string to array if used, or pass array directly
+            autores: Array.isArray(form.autores) ? form.autores : [],
+            tags: form.tags, // Array of tag names
+            hidden: form.hidden
+        }
+
+        formData.append('metadata', JSON.stringify(metadata))
+
+        // 2. Append File
+        if (form.file) {
+            formData.append('file', form.file)
+        }
+
+        await apiStore.createPublication(formData)
+        // Refresh list
+        await fetchPublications()
+    }
     return {
         publications,
         loading,
         fetchPublications,
-        downloadFile
+        downloadFile,
+        create
     }
 })

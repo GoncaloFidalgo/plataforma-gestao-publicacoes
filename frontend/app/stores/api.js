@@ -88,22 +88,64 @@ export const useAPIStore = defineStore('api', () => {
     const getPublications = async () => {
         const headers = authHeader()
         if (!headers) return []
-        const { data } = await axios.get(`${API_BASE_URL}/publicacoes`, { headers })
+        const { data } = await axios.get(`${API_BASE_URL}/publications`, { headers })
         return data
     }
 
+    const createPublication = (formData) => {
+        const headers = authHeader()
+        if (!headers) throw new Error("No token")
+
+        // Axios mete 'Content-Type': 'multipart/form-data' quando deteta um FormData
+        return axios.post(`${API_BASE_URL}/publications`, formData, { headers })
+    }
 
     const downloadPublication = (id) => {
         const headers = authHeader()
         if (!headers) throw new Error("No token")
 
-        return axios.get(`${API_BASE_URL}/publicacoes/${id}/ficheiro`, {
+        return axios.get(`${API_BASE_URL}/publications/${id}/ficheiro`, {
             headers,
             responseType: 'blob'
         })
     }
 
     //#endregion
+// --- REFERENCE DATA (Types & Areas) ---
+
+    // TYPES
+    const getTypes = () => {
+        const headers = authHeader()
+        if (!headers) return []
+        return axios.get(`${API_BASE_URL}/references/types`, { headers }).then(r => r.data)
+    }
+
+    const createType = (data) => {
+        const headers = authHeader()
+        return axios.post(`${API_BASE_URL}/references/types`, data, { headers })
+    }
+
+    const deleteType = (id) => {
+        const headers = authHeader()
+        return axios.delete(`${API_BASE_URL}/references/types/${id}`, { headers })
+    }
+
+    // AREAS
+    const getAreas = () => {
+        const headers = authHeader()
+        if (!headers) return []
+        return axios.get(`${API_BASE_URL}/references/areas`, { headers }).then(r => r.data)
+    }
+
+    const createArea = (data) => {
+        const headers = authHeader()
+        return axios.post(`${API_BASE_URL}/references/areas`, data, { headers })
+    }
+
+    const deleteArea = (id) => {
+        const headers = authHeader()
+        return axios.delete(`${API_BASE_URL}/references/areas/${id}`, { headers })
+    }
 
 
     return {
@@ -119,5 +161,7 @@ export const useAPIStore = defineStore('api', () => {
         changePassword,
         getPublications,
         downloadPublication,
+        getTypes, createType, deleteType,
+        getAreas, createArea, deleteArea,
     }
 })
