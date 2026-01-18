@@ -114,18 +114,7 @@ const authStore = useAuthStore()
 const toast = useToast()
 
 definePageMeta({
-  layout: 'default',
-  middleware: [
-    function (to, from) {
-      const auth = useAuthStore()
-      if (!auth.currentUser) return navigateTo('/login')
-
-      const role = auth.currentUser.roleType
-      if (role !== 'Administrator' && role !== 'Responsavel') {
-        return navigateTo('/')
-      }
-    }
-  ]
+  middleware: 'responsavel'
 })
 
 const columns = [

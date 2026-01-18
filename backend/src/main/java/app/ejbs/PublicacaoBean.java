@@ -5,6 +5,7 @@ import app.exceptions.MyConstraintViolationException;
 import app.exceptions.MyEntityNotFoundException;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.validation.ConstraintViolationException;
 import org.hibernate.Hibernate;
@@ -25,7 +26,7 @@ public class PublicacaoBean {
 
     private static final String UPLOAD_DIR = System.getProperty("java.io.tmpdir") + "/publications/";
 
-    public Publicacao create(String titulo, String tipo, List<String> authorUsernames, String areaCientifica, String descricao, InputStream fileContent, String extension, List<String> tagNames, String creatorUsername) throws MyConstraintViolationException, MyEntityNotFoundException, IOException {
+    public Publicacao create(String titulo, Long tipoId, List<String> authorUsernames, Long areaId, String descricao, InputStream fileContent, String extension, List<String> tagNames, String creatorUsername) throws MyConstraintViolationException, MyEntityNotFoundException, IOException {
         // Guardar ficheiro
         String storedFileName = null;
         if (fileContent != null) {
@@ -48,8 +49,14 @@ public class PublicacaoBean {
             }
 
             // Criar a publicação
-            Publicacao publicacao = new Publicacao(titulo, tipo, areaCientifica, descricao, storedFileName, creator);
+            PublicationType type = entityManager.find(PublicationType.class, tipoId);
+            if (type == null) throw new MyEntityNotFoundException("Type with ID " + tipoId + " not found.");
 
+            ScientificArea area = entityManager.find(ScientificArea.class, areaId);
+            if (area == null) throw new MyEntityNotFoundException("Area with ID " + areaId + " not found.");
+
+            // Create
+            Publicacao publicacao = new Publicacao(titulo, type, area, descricao, storedFileName, creator);
             if (authorUsernames != null) {
                 for (String username : authorUsernames) {
                     Colaborador autor = entityManager.find(Colaborador.class, username);
@@ -77,9 +84,9 @@ public class PublicacaoBean {
     }
     public File getFile(Long id) {
         Publicacao p = find(id);
-        if (p == null || p.getFile() == null) return null;
+        if (p == null || p.getFilename() == null) return null;
 
-        File file = new File(UPLOAD_DIR, p.getFile());
+        File file = new File(UPLOAD_DIR, p.getFilename());
         return file.exists() ? file : null;
     }
 
@@ -98,7 +105,9 @@ public class PublicacaoBean {
 
     public List<Publicacao> findAll(String tag, String titulo, String autorName, String areaCientifica, String uploaderName, Boolean hidden) {
         StringBuilder jpql = new StringBuilder("SELECT DISTINCT p FROM Publicacao p LEFT JOIN p.tags t LEFT JOIN p.autores a WHERE 1=1");
-
+        if (areaCientifica != null && !areaCientifica.isBlank()) {
+            jpql.append(" AND LOWER(p.areaCientifica.name) LIKE LOWER(:areaCientifica)");
+        }
         if (tag != null && !tag.isBlank()) {
             jpql.append(" AND LOWER(t.name) LIKE LOWER(:tag)");
         }
@@ -107,9 +116,6 @@ public class PublicacaoBean {
         }
         if (autorName != null && !autorName.isBlank()) {
             jpql.append(" AND LOWER(a.name) LIKE LOWER(:autorName)");
-        }
-        if (areaCientifica != null && !areaCientifica.isBlank()) {
-            jpql.append(" AND LOWER(p.areaCientifica) LIKE LOWER(:areaCientifica)");
         }
         if (uploaderName != null && !uploaderName.isBlank()) {
             jpql.append(" AND LOWER(p.createdBy.name) LIKE LOWER(:uploaderName)");
@@ -141,7 +147,7 @@ public class PublicacaoBean {
         return results;
     }
 
-    public Publicacao update(Long id, String titulo, String autorUsernameToAdd, String areaCientifica, String descricao, String resumo, List<String> tagNames, Boolean hidden, String editorUsername) throws MyEntityNotFoundException {
+    public Publicacao update(Long id, String titulo,   Long tipoId, String autorUsernameToAdd, Long areaId, String descricao, String resumo, List<String> tagNames, Boolean hidden, String editorUsername) throws MyEntityNotFoundException {
         var publicacao = entityManager.find(Publicacao.class, id);
         if (publicacao == null) return null;
 
@@ -157,8 +163,15 @@ public class PublicacaoBean {
                 publicacao.addAutor(newAutor);
             }
         }
+        if (tipoId != null) {
+            PublicationType type = entityManager.find(PublicationType.class, tipoId);
+            if (type != null) publicacao.setTipo(type);
+        }
+        if (areaId != null) {
+            ScientificArea area = entityManager.find(ScientificArea.class, areaId);
+            if (area != null) publicacao.setAreaCientifica(area);
+        }
 
-        if (areaCientifica != null) publicacao.setAreaCientifica(areaCientifica);
         if (descricao != null) publicacao.setDescricao(descricao);
         if (resumo != null) publicacao.setResumo(resumo);
         if (hidden != null) publicacao.setHidden(hidden);

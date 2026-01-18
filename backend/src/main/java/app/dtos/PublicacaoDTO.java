@@ -39,17 +39,17 @@ public class PublicacaoDTO implements Serializable {
         PublicacaoDTO dto = new PublicacaoDTO();
         dto.setId(p.getId());
         dto.setTitulo(p.getTitulo());
-        dto.setTipo(p.getTipo());
-        dto.setAreaCientifica(p.getAreaCientifica());
+        if (p.getTipo() != null) dto.setTipo(p.getTipo().getName());
+        if (p.getAreaCientifica() != null) dto.setAreaCientifica(p.getAreaCientifica().getName());
         dto.setDescricao(p.getDescricao());
-        dto.setFile(p.getFile());
+        dto.setFile(p.getFilename());
         dto.setResumo(p.getResumo());
         dto.setHidden(p.getHidden());
         dto.setCreatedAt(p.getCreatedAt());
 
-        if (p.getFile() != null) {
-            if (p.getFile().toLowerCase().endsWith(".pdf")) dto.setFileType("pdf");
-            else if (p.getFile().toLowerCase().endsWith(".zip")) dto.setFileType("zip");
+        if (p.getFilename() != null) {
+            if (p.getFilename().toLowerCase().endsWith(".pdf")) dto.setFileType("pdf");
+            else if (p.getFilename().toLowerCase().endsWith(".zip")) dto.setFileType("zip");
             else dto.setFileType("unknown");
         }
 

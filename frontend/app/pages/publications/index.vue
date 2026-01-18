@@ -7,7 +7,12 @@
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Publications</h1>
         <p class="text-gray-500 text-sm">Browse and download academic resources</p>
       </div>
-      <!-- Placeholder for future "Upload" button -->
+      <UButton
+          icon="i-heroicons-cloud-arrow-up"
+          color="primary"
+          label="Upload"
+          to="/publications/create"
+      />
     </div>
 
     <!-- Table -->
@@ -33,7 +38,7 @@
           {{ new Date(row.original.createdAt).toLocaleDateString() }}
         </template>
 
-        <!-- Custom Cell: Actions (Download) -->
+        <!-- Custom Cell: Actions -->
         <template #actions-cell="{ row }">
           <UTooltip text="Download File">
             <UButton
@@ -60,7 +65,7 @@ definePageMeta({
   layout: 'default'
 })
 
-// Columns configuration (Nuxt UI v3 / TanStack)
+// Columns configuration
 const columns = [
   { accessorKey: 'id', header: '#' },
   { accessorKey: 'fileType', header: 'Type' },
@@ -73,7 +78,6 @@ const columns = [
 ]
 
 const search = ref('')
-// Simple client-side search for now
 const filteredPublications = computed(() => {
   if (!search.value) return pubStore.publications
   return pubStore.publications.filter(p =>
@@ -81,7 +85,7 @@ const filteredPublications = computed(() => {
   )
 })
 
-// Track which specific file is downloading to show spinner on that button
+// Guardar o id da publicacao para saber de qual publicacao estamos a fazer download para mostrar o loading em vez do icon de download
 const downloadingId = ref(null)
 
 onMounted(() => {

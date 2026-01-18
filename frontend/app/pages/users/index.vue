@@ -11,7 +11,7 @@
           </p>
         </div>
 
-        <NuxtLink to="/administrators/create" class="users-create-btn">
+        <NuxtLink to="/users/create" class="users-create-btn">
           Criar utilizador
         </NuxtLink>
       </header>
@@ -32,7 +32,7 @@
           <tbody>
             <tr v-for="user in users" :key="user.username">
               <td>
-                <NuxtLink :to="`/administrators/${user.username}`" class="link-quiet">
+                <NuxtLink :to="`/users/${user.username}`" class="link-quiet">
                   {{ user.name }}
                 </NuxtLink>
               </td>
@@ -57,17 +57,17 @@
               </td>
              <td class="actions-cell">
                 <!-- Edit -->
-                <NuxtLink :to="`/administrators/${user.username}/edit`" class="icon-btn" title="Editar utilizador">
+                <NuxtLink :to="`/users/${user.username}/edit`" class="icon-btn" title="Editar utilizador">
                   <UIcon name="i-heroicons-pencil-square" class="w-5 h-5" />
                 </NuxtLink>
 
                 <!-- Role -->
-                <NuxtLink :to="`/administrators/${user.username}/role`" class="icon-btn icon-btn--soft" title="Alterar role">
+                <NuxtLink :to="`/users/${user.username}/role`" class="icon-btn icon-btn--soft" title="Alterar role">
                   <UIcon name="i-heroicons-shield-check" class="w-5 h-5" />
                 </NuxtLink>
 
                 <!-- Change Status -->
-                <NuxtLink :to="`/administrators/${user.username}/status`" class="icon-btn icon-btn--warning" title="Alterar estado">
+                <NuxtLink :to="`/users/${user.username}/status`" class="icon-btn icon-btn--warning" title="Alterar estado">
                   <UIcon name="i-heroicons-arrow-right-end-on-rectangle" class="w-5 h-5" />
                 </NuxtLink>
 
@@ -92,8 +92,10 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
-import { useUsersStore } from '~/stores/users'
-
+import { useUsersStore } from '~/stores/users.js'
+definePageMeta({
+  middleware: 'admin'
+})
 const usersStore = useUsersStore()
 
 // ligar a tabela ao estado do store

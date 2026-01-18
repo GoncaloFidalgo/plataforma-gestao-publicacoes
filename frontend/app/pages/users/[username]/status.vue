@@ -20,7 +20,7 @@
           description="The requested user does not exist."
         />
         <div class="mt-4">
-          <UButton to="/administrators" color="gray" variant="soft">
+          <UButton to="/users" color="gray" variant="soft">
             Back to list
           </UButton>
         </div>
@@ -64,7 +64,7 @@
 
         <!-- Actions -->
         <div class="flex justify-between items-center">
-          <UButton :to="`/administrators`" color="primary" variant="outline" :disabled="loading">
+          <UButton :to="`/users`" color="primary" variant="outline" :disabled="loading">
             Cancel
           </UButton>
 
@@ -85,7 +85,7 @@
 <script setup>
 import { z } from 'zod'
 import { useRoute, useRouter } from 'vue-router'
-import { useUsersStore } from '~/stores/users'
+import { useUsersStore } from '~/stores/users.js'
 import { useToast } from '#imports'
 
 const route = useRoute()
@@ -147,7 +147,7 @@ const handleSubmit = async () => {
       icon: 'i-heroicons-check-circle'
     })
 
-    await router.push(`/administrators`)
+    await router.push(`/users`)
   } catch (err) {
     console.error(err)
     errorMessage.value = 'Could not change status. Please try again.'
