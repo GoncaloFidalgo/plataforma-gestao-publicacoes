@@ -77,9 +77,9 @@ public class PublicacaoBean {
     }
     public File getFile(Long id) {
         Publicacao p = find(id);
-        if (p == null || p.getFile() == null) return null;
+        if (p == null || p.getFilename() == null) return null;
 
-        File file = new File(UPLOAD_DIR, p.getFile());
+        File file = new File(UPLOAD_DIR, p.getFilename());
         return file.exists() ? file : null;
     }
 

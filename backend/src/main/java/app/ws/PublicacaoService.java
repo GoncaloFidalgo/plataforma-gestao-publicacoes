@@ -5,7 +5,6 @@ import app.dtos.PublicacaoDTO;
 import app.ejbs.PublicacaoBean;
 import app.ejbs.UserBean;
 import app.entities.Publicacao;
-import app.entities.User;
 import app.exceptions.MyConstraintViolationException;
 import app.exceptions.MyEntityNotFoundException;
 import app.security.Authenticated;
@@ -16,18 +15,13 @@ import jakarta.ws.rs.core.*;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Path("publications")
@@ -121,7 +115,7 @@ public class PublicacaoService {
     public Response download(@PathParam("id") Long id) {
         Publicacao publicacao = publicacaoBean.find(id);
 
-        if (publicacao == null || publicacao.getFile() == null) {
+        if (publicacao == null || publicacao.getFilename() == null) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("Publication or file not found")
                     .build();
@@ -134,7 +128,7 @@ public class PublicacaoService {
                     .entity("File not found on server").build();
         }
 
-        String extension = getExtension(publicacao.getFile());
+        String extension = getExtension(publicacao.getFilename());
         String sanitizedTitle = publicacao.getTitulo().replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
         String downloadName = sanitizedTitle + extension;
 

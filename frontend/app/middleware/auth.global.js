@@ -1,6 +1,6 @@
 import {useAuthStore} from "~/stores/auth.js";
 import {useAPIStore} from "~/stores/api.js";
-//
+
 export default defineNuxtRouteMiddleware(async (to, from) => {
     const authStore = useAuthStore()
     const apiStore = useAPIStore()
@@ -9,7 +9,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     // Se houver token mas não houver user, vai se buscar o
     if (apiStore.token && !authStore.currentUser) {
         // Usar await para a esperar até ter os dados do user, ou seja, a página nao carrega até obter os dados e continuar a execução.
-        await authStore.getUser()
+        await authStore.authUser()
     }
 
     // 2. Protected Routes Logic:

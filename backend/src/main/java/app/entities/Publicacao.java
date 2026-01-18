@@ -32,7 +32,7 @@ public class Publicacao implements Serializable {
 
     private String tipo;
 
-    private String file;
+    private String filename;
 
     private String resumo;
 
@@ -65,12 +65,12 @@ public class Publicacao implements Serializable {
     public Publicacao() {
     }
 
-    public Publicacao(String titulo,  String tipo, String areaCientifica, String descricao, String file,  User createdBy) {
+    public Publicacao(String titulo, String tipo, String areaCientifica, String descricao, String filename, User createdBy) {
         this.titulo = titulo;
         this.tipo = tipo;
         this.areaCientifica = areaCientifica;
         this.descricao = descricao;
-        this.file = file;
+        this.filename = filename;
         this.createdBy = createdBy;
         this.createdAt = LocalDateTime.now();
         this.hidden = false;
@@ -131,8 +131,8 @@ public class Publicacao implements Serializable {
     public String getDescricao() { return descricao; }
     public void setDescricao(String descricao) { this.descricao = descricao; }
 
-    public String getFile() { return file; }
-    public void setFile(String file) { this.file = file; }
+    public String getFilename() { return filename; }
+    public void setFilename(String file) { this.filename = file; }
 
     public String getResumo() { return resumo; }
     public void setResumo(String resumo) { this.resumo = resumo; }

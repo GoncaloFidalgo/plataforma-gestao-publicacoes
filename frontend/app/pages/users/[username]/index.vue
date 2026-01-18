@@ -22,7 +22,7 @@
 
         <div class="pt-4">
           <UButton
-            to="/administrators"
+            to="/users"
             color="orange"
             variant="outline"
             icon="i-heroicons-arrow-left"
@@ -62,7 +62,7 @@
         <!-- ACTION BUTTONS -->
         <div class="flex gap-3 pt-5 justify-between">
           <UButton
-            to="/administrators"
+            to="/users"
             variant="outline"
             color="orange"
             icon="i-heroicons-arrow-left"
@@ -72,7 +72,7 @@
 
           <div class="flex gap-2">
             <UButton
-              :to="`/administrators/${user.username}/role`"
+              :to="`/users/${user.username}/role`"
               color="primary" variant="outline"
               icon="i-heroicons-shield-check"
             >
@@ -80,7 +80,7 @@
             </UButton>
 
             <UButton
-              :to="`/administrators/${user.username}/edit`"
+              :to="`/users/${user.username}/edit`"
               color="primary"
               icon="i-heroicons-pencil-square"
             >
@@ -97,7 +97,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useUsersStore } from '~/stores/users'
+import { useUsersStore } from '~/stores/users.js'
 
 const route = useRoute()
 const usersStore = useUsersStore()

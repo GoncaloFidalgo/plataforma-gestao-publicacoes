@@ -56,46 +56,66 @@ import { useToast } from '#imports'
 
 const authStore = useAuthStore()
 const toast = useToast()
+const dashboardEntry = computed(() => {
+  const user = authStore.currentUser
 
-const dropdownItems = computed(() => [
-  [{
-    label: 'My Account',
-    icon: 'i-heroicons-user-circle',
-    onSelect() {
-      navigateTo('/account')
+  // Só admins e responsaveis têm dashboard
+  if (!user || (!authStore.isAdmin && !authStore.isResponsavel)) {
+    return null
+  }
+
+  // Itens visiveis às duas roles (Itens do responsavel são também acedidos pelo admin)
+  // Estão adicionados por defeito
+  const children = [
+    {
+      label: 'Tags',
+      icon: 'i-heroicons-tag',
+      onSelect: () => navigateTo('/tags')
     }
-  },
-  {
-    type: 'separator'
-  },
-  {
-    label: 'Adminstrator Dashboard',
+  ]
+
+  // Itens só para o admin
+  // Adicionados apenas se o user for admin
+  if (authStore.isAdmin) {
+    children.push({
+      label: 'Users',
+      icon: 'i-heroicons-user',
+      onSelect: () => navigateTo('/users')
+    })
+  }
+
+  return {
+    label: `Dashboard`,
     icon: 'i-heroicons-table-cells',
-    onSelect() {
-      navigateTo('/administrators')
+    children: children
+  }
+})
+
+const dropdownItems = computed(() => {
+  // Aqui definem-se os itens disponiveis para todas as roles, pois se está disponivel para um colaborador, está para as outras duas roles.
+  const mainGroup = [
+    {
+      label: 'My Account',
+      icon: 'i-heroicons-user-circle',
+      onSelect: () => navigateTo('/account')
     }
-  },
-  ],
-  [
-    {
-      label: 'Dashboard',
-      children: [
-        [
-          {
-            label: 'Tags',
-            onSelect: () => navigateTo('/tags')
-          },
-        ],
-      ]
-    },
-  ],
-  [
-    {
+  ]
+
+  // Adicionar a dashboard dos resp e admins
+  if (dashboardEntry.value) {
+    mainGroup.push({ type: 'separator' })
+    mainGroup.push(dashboardEntry.value)
+  }
+
+  return [
+    mainGroup,
+    [{
       label: 'Logout',
       icon: 'i-heroicons-arrow-left-on-rectangle',
       color: 'error',
       onSelect: () => authStore.logout()
-    }
-  ],
-])
+    }]
+  ]
+})
+
 </script>

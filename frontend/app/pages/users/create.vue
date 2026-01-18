@@ -70,7 +70,7 @@
 
         <!-- Actions -->
         <div class="flex justify-between items-center">
-          <UButton :to="`/administrators`" color="primary" variant="outline">
+          <UButton :to="`/users`" color="primary" variant="outline">
             Cancel
           </UButton>
 
@@ -91,7 +91,7 @@
 <script setup>
 import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUsersStore } from '~/stores/users'
+import { useUsersStore } from '~/stores/users.js'
 
 const router = useRouter()
 const usersStore = useUsersStore()
@@ -125,7 +125,7 @@ const onSubmit = async () => {
     console.log('🟢 depois createUser', usersStore.users)
 
 
-    await router.push(`/administrators`)
+    await router.push(`/users`)
   } catch (error) {
     console.error('Erro ao criar utilizador:', error?.response?.data || error)
     alert('Erro ao criar utilizador.')

@@ -10,39 +10,31 @@ export const useAuthStore = defineStore('auth', () => {
     const isLoggedIn = computed(() => !!currentUser.value)
 
     const isAdmin = computed(() => {
-        if (!currentUser.value) return false
-
-        if (currentUser.value.roleType) {
-            return currentUser.value.roleType.toLowerCase() === 'administrator'
-        }
-        if (typeof currentUser.value.role === 'number') {
-            return currentUser.value.role === 1
-        }
-        return false
+        const user = currentUser.value
+        if (!user) return false
+        return user.role === 1 || user.roleType.toLowerCase() === 'administrator'
+    })
+    const isResponsavel = computed(() => {
+        const user = currentUser.value
+        if (!user) return false
+        return user.role === 2 || user.roleType.toLowerCase() === 'responsavel'
+    })
+    const isColaborador = computed(() => {
+        const user = currentUser.value
+        if (!user) return false
+        return user.role === 3 || user.roleType.toLowerCase() === 'Colaborador'
     })
 
     const login = async (credentials) => {
-        try {
-            await apiStore.postLogin(credentials)
-            await getUser()
-        } catch (error) {
-            throw error
-        }
+        await apiStore.postLogin(credentials)
+        await authUser()
     }
 
-    const getUser = async () => {
-        if (!apiStore.token) {
-            console.warn('getUser: no token, skipping')
-            return null
-        }
-
+    const authUser = async () => {
         try {
-            const user = await apiStore.getAuthUser()
-            console.log(user)
-            currentUser.value = user        // se API devolver { id, ... }
-            return user
+            currentUser.value = await apiStore.getAuthUser()
         } catch (error) {
-            console.error('Session expired or invalid', error.response?.data || error)
+           // console.error('Session expired or invalid', error.response?.data || error)
             apiStore.token = null
             currentUser.value = null
             throw error
@@ -76,9 +68,11 @@ export const useAuthStore = defineStore('auth', () => {
         currentUser,
         isLoggedIn,
         isAdmin,
+        isResponsavel,
+        isColaborador,
         login,
         logout,
-        getUser,
+        authUser,
         changePassword
     }
 })
