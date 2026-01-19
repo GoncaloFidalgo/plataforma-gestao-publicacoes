@@ -2,6 +2,9 @@ package app.ws;
 
 import app.dtos.ReferenceDTO;
 import app.ejbs.ReferenceBean;
+import app.entities.PublicationType;
+import app.entities.ScientificArea;
+import app.exceptions.MyConstraintViolationException;
 import app.exceptions.MyEntityExistsException;
 import app.exceptions.MyEntityNotFoundException;
 import app.security.Authenticated;
@@ -34,8 +37,11 @@ public class ReferenceService {
     @RolesAllowed({"Administrator", "Responsavel"})
     public Response createType(ReferenceDTO dto) {
         try {
-            referenceBean.createType(dto.getName());
-            return Response.status(Response.Status.CREATED).entity(dto).build();
+            PublicationType createdType = referenceBean.createType(dto.getName());
+
+            return Response.status(Response.Status.CREATED)
+                    .entity(ReferenceDTO.from(createdType))
+                    .build();
         } catch (MyEntityExistsException e) {
             return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
         }
@@ -49,9 +55,12 @@ public class ReferenceService {
             referenceBean.deleteType(id);
             return Response.ok().build();
         } catch (MyEntityNotFoundException e) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (MyConstraintViolationException e) {
+            return Response.status(Response.Status.CONFLICT).entity("{\"message\": \"" + e.getMessage() + "\"}").build();
         }
     }
+
 
     // --- AREAS ---
 
@@ -66,8 +75,11 @@ public class ReferenceService {
     @RolesAllowed({"Administrator", "Responsavel"})
     public Response createArea(ReferenceDTO dto) {
         try {
-            referenceBean.createArea(dto.getName());
-            return Response.status(Response.Status.CREATED).entity(dto).build();
+            ScientificArea createdArea = referenceBean.createArea(dto.getName());
+
+            return Response.status(Response.Status.CREATED)
+                    .entity(ReferenceDTO.from(createdArea))
+                    .build();
         } catch (MyEntityExistsException e) {
             return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
         }
@@ -81,7 +93,9 @@ public class ReferenceService {
             referenceBean.deleteArea(id);
             return Response.ok().build();
         } catch (MyEntityNotFoundException e) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (MyConstraintViolationException e) {
+            return Response.status(Response.Status.CONFLICT).entity("{\"message\": \"" + e.getMessage() + "\"}").build();
         }
     }
 }

@@ -18,8 +18,14 @@ Authorization: Bearer {{auth_token}}
 Content-Type: application/json
 
 {
-  "name": "Dissertation"
+  "name": "Dissertation4"
 }
+
+### Delete Type
+DELETE http://localhost:8080/academics/api/references/types/1
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
 
 ### 3. Get All Scientific Areas
 GET http://localhost:8080/academics/api/references/areas
@@ -39,7 +45,7 @@ Authorization: Bearer {{auth_token}}
 Content-Type: application/json
 
 {
-  "name": "Physics"
+  "name": "Physics2"
 }
 
 ### --- PUBLICATIONS ---

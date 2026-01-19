@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Publication Types</h1>
-        <p class="text-gray-500 text-sm">Manage types like 'Thesis', 'Article', etc.</p>
+        <p class="text-gray-500 text-sm">Create and manage publication types</p>
       </div>
       <UButton icon="i-heroicons-plus" color="primary" label="New Type" @click="isModalOpen = true" />
     </div>
@@ -16,7 +16,7 @@
               size="2xs"
               color="red"
               variant="ghost"
-              @click="handleDelete(row.original)"
+              @click="confirmDelete(row.original)"
           />
         </template>
       </UTable>
@@ -45,6 +45,14 @@
         </UCard>
       </template>
     </UModal>
+
+    <ConfirmDeleteModal
+        v-model="isDeleteModalOpen"
+        type="type"
+        :item-name="itemToDelete?.name"
+        :loading="deleting"
+        @confirm="executeDelete"
+    />
   </div>
 </template>
 
@@ -69,6 +77,10 @@ const saving = ref(false)
 const state = reactive({ name: '' })
 const schema = z.object({ name: z.string().min(1, 'Name is required') })
 
+const isDeleteModalOpen = ref(false)
+const itemToDelete = ref(null)
+const deleting = ref(false)
+
 onMounted(() => {
   refStore.fetchTypes()
 })
@@ -87,13 +99,23 @@ const handleSave = async () => {
   }
 }
 
-const handleDelete = async (item) => {
-  if (!confirm(`Delete type "${item.name}"?`)) return
+const confirmDelete = (item) => {
+  itemToDelete.value = item
+  isDeleteModalOpen.value = true
+}
+
+const executeDelete = async () => {
+  if (!itemToDelete.value) return
+  deleting.value = true
   try {
-    await refStore.deleteType(item.id)
+    await refStore.deleteType(itemToDelete.value.id)
     toast.add({ title: 'Type deleted', color: 'green' })
+    isDeleteModalOpen.value = false
   } catch (error) {
-    toast.add({ title: 'Error', description: 'Cannot delete type in use', color: 'red' })
+    const msg = error.response?.data?.mensagem || 'Cannot delete type in use'
+    toast.add({ title: 'Error', description: msg, color: 'red' })
+  } finally {
+    deleting.value = false
   }
 }
 </script>

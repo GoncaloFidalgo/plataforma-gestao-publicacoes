@@ -9,6 +9,9 @@ public class MyConstraintViolationException extends Exception{
     public MyConstraintViolationException(ConstraintViolationException e) {
         super(getConstraintViolationMessages(e));
     }
+    public MyConstraintViolationException(String message) {
+        super(message);
+    }
 
     private static String
     getConstraintViolationMessages(ConstraintViolationException e) {
