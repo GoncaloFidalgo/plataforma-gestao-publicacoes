@@ -93,3 +93,8 @@ Accept: application/json
 ### 7. Download Publication File
 GET http://localhost:8080/academics/api/publications/{{publication_id}}/ficheiro
 Authorization: Bearer {{auth_token}}
+
+### 8. Get Aunthenticated User Publication's (Search)
+GET http://localhost:8080/academics/api/users/me/publications
+Authorization: Bearer {{auth_token}}
+Accept: application/json

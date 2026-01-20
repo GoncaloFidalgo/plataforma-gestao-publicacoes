@@ -20,7 +20,7 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "email": "banana@example.com"
+  "email": "admin@e.com"
 }
 
 ### RESET PASSWORD
@@ -59,6 +59,18 @@ Authorization: Bearer {{auth_token}}
   "email": "joao.silva@gmail.com",
   "active": false
 }
+
+### Update User
+PUT http://localhost:8080/academics/api/users/me
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+
+{
+  "name": "joao",
+  "email": "joao.silva@gmail.com"
+}
+
 
 ### Get Users
 GET http://localhost:8080/academics/api/users
@@ -107,6 +119,12 @@ Authorization: Bearer {{auth_token}}
 GET http://localhost:8080/academics/api/users/joao
 Accept: application/json
 Authorization: Bearer {{auth_token}}
+
+### Get User's Publication by Username (Administrator only)
+GET http://localhost:8080/academics/api/users/colab/publications
+Accept: application/json
+Authorization: Bearer {{auth_token}}
+
 
 
 

@@ -541,6 +541,7 @@ const handleClearRating = async () => {
 const handleDownload = async (pub) => {
   if (!pub) return
   downloadingId.value = pub.id
+  
   try {
     await pubStore.downloadFile(pub.id, pub.titulo, pub.fileType)
     toast.add({ title: 'Download started', color: 'green' })

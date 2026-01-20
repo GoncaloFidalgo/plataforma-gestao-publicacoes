@@ -87,7 +87,7 @@ const handleSubmit = async () => {
     })
 
     // opcional: voltar à página de conta
-    await router.push('/account')
+    await router.push('/me')
   } catch (error) {
     console.error('Change password error:', error.response?.data || error)
 

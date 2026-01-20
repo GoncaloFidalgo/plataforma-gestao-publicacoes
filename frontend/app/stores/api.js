@@ -1,4 +1,4 @@
-import {defineStore} from 'pinia'
+import { defineStore } from 'pinia'
 import axios from 'axios'
 
 export const useAPIStore = defineStore('api', () => {
@@ -11,29 +11,28 @@ export const useAPIStore = defineStore('api', () => {
 
     //#region Auth
     const postLogin = async (credentials) => {
-        const {data} = await axios.post(`${API_BASE_URL}/auth/login`, credentials)
+        const { data } = await axios.post(`${API_BASE_URL}/auth/login`, credentials)
         token.value = data
     }
     // Para meter o header de autorização nos pedidos autenticados
     const authHeader = () => {
-        return token.value ? {Authorization: `Bearer ${token.value}`} : null
+        return token.value ? { Authorization: `Bearer ${token.value}` } : null
     }
-//#endregion
+    //#endregion
 
-//#region User
+    //#region User
     const getAuthUser = async () => {
         const headers = authHeader()
         if (!headers) return null
 
-        const { data } = await axios.get(`${API_BASE_URL}/auth/user`, { headers})
-        console.log(data)
+        const { data } = await axios.get(`${API_BASE_URL}/auth/user`, { headers })
         return data
     }
     const createUser = async (payload) => {
         const headers = authHeader()
         if (!headers) return null
 
-        const {data} = await axios.post(`${API_BASE_URL}/users`, payload, {headers})
+        const { data } = await axios.post(`${API_BASE_URL}/users`, payload, { headers })
     }
     const updateUser = async (id, payload) => {
         const headers = authHeader()
@@ -46,7 +45,7 @@ export const useAPIStore = defineStore('api', () => {
     const deleteUserApi = async (id) => {
         const headers = authHeader()
         if (!headers) return null
-        return axios.delete(`${API_BASE_URL}/users/${id}`, {headers})
+        return axios.delete(`${API_BASE_URL}/users/${id}`, { headers })
     }
     const getUsers = async () => {
         const headers = authHeader()
@@ -65,10 +64,47 @@ export const useAPIStore = defineStore('api', () => {
         return data
     }
 
+    const getMyPublications = async () => {
+        const headers = authHeader()
+        if (!headers) return null
+        const { data } = await axios.get(`${API_BASE_URL}/users/me/publications`, {
+            headers
+        })
+        return data // array de publications
+    }
+
+    const recoverPassword = async (email) => {
+        const { data } = await axios.post(
+            `${API_BASE_URL}/auth/recover-password`,
+            { email }
+        )
+        return data // { mensagem: "..." }
+    }
+
+    const resetPassword = async (payload) => {
+        // payload: { token, nova_password }  (ou camelCase se o backend exigir)
+        const { data } = await axios.put(
+            `${API_BASE_URL}/auth/reset-password`,
+            payload
+        )
+        return data // { mensagem: "..." }
+    }
+
+    const updateMe = async (payload) => {
+        const headers = authHeader()
+        if (!headers) return null
+        const { data } = await axios.put(
+            `${API_BASE_URL}/users/me`,
+            payload, {
+            headers
+        })
+        return data
+    }
+
     const changePassword = async (payload) => {
         const headers = authHeader()
         if (!headers) return null
-        const { data } = await axios.patch(`${API_BASE_URL}/auth/set-password`, payload,{
+        const { data } = await axios.patch(`${API_BASE_URL}/auth/set-password`, payload, {
             headers
         })
         return data
@@ -82,7 +118,7 @@ export const useAPIStore = defineStore('api', () => {
         })
         return data
     }
- //#endregion
+    //#endregion
 
     //#region Publications
     const getPublications = async () => {
@@ -91,6 +127,19 @@ export const useAPIStore = defineStore('api', () => {
         const { data } = await axios.get(`${API_BASE_URL}/publications`, { headers })
         return data
     }
+
+    const getPublicationsByUser = async (username) => {
+        const headers = authHeader()
+        if (!headers) return []
+
+        const { data } = await axios.get(
+            `${API_BASE_URL}/users/${username}/publications`,
+            { headers }
+        )
+        return data
+    
+    }
+
 
     const createPublication = (formData) => {
         const headers = authHeader()
@@ -124,7 +173,7 @@ export const useAPIStore = defineStore('api', () => {
 
 
     //#endregion
-// --- REFERENCE DATA (Types & Areas) ---
+    // --- REFERENCE DATA (Types & Areas) ---
 
     // TYPES
     const getTypes = () => {
@@ -203,6 +252,11 @@ export const useAPIStore = defineStore('api', () => {
         changePassword,
         getPublications,
         downloadPublication,
+        recoverPassword,
+        resetPassword,
+        getMyPublications,
+        getPublicationsByUser,
+        updateMe,
         getTypes, createType, deleteType,
         getAreas, createArea, deleteArea,
         getPublicationComments,

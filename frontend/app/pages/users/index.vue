@@ -78,6 +78,18 @@
 
               </div>
             </template>
+            <template #view-cell="{ row }">
+              <div class="actions-cell flex items-center justify-end gap-1.5">
+
+                <!-- Edit -->
+                <UTooltip text="Ver Publicações">
+                  <UButton icon="i-heroicons-document-magnifying-glass" size="md" class="icon-btn"
+                           :to="`/users/${user.username}/publications`"/>
+                </UTooltip>
+
+
+              </div>
+            </template>
           </UTable>
         </div>
 
@@ -109,11 +121,18 @@ const columns = [
   {accessorKey: 'email', header: 'Email'},
   {accessorKey: 'roleType', header: 'Role'},
   {accessorKey: 'active', header: 'Estado'},
+  {id: 'view', header: 'Ver', meta: {
+      class: {
+        th: 'text-center',
+      }
+    },
+  },
   {id: 'actions', header: 'Ações', meta: {
       class: {
         th: 'text-center',
       }
-    },}
+    },
+  }
 ]
 
 onMounted(async () => {

@@ -30,7 +30,7 @@
           <strong>Email:</strong> {{ user.email }}
         </div>
         <div>
-          <strong>Role:</strong> {{ user.role }}
+          <strong>Role:</strong> {{ user.roleType }}
         </div>
         <div>
           <strong>Status: </strong>
@@ -38,11 +38,22 @@
             {{ user.active ? 'Active' : 'Suspended' }}
           </span>
         </div>
+         <div class="flex justify-end items-center gap-2">
+          <UButton
+              :to="`/me/change-password`"
+              color="primary" variant="outline"
+              icon="i-heroicons-key"
+            >
+              Change Password
+            </UButton>
 
-        <div class="flex gap-3 pt-4">
-          <UButton to="/account/change-password" color="neutral" variant="soft">
-            Change password
-          </UButton>
+            <UButton
+              :to="`/me/edit`"
+              color="primary"
+              icon="i-heroicons-pencil-square"
+            >
+              Edit
+            </UButton>
         </div>
       </div>
     </UCard>
