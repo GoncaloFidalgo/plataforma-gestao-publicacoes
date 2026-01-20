@@ -1,7 +1,7 @@
 package app.ws;
 
-import app.dtos.PublicacaoDTO;
 import app.dtos.UserDTO;
+import app.dtos.publication.PublicacaoDTO;
 import app.ejbs.PublicacaoBean;
 import app.ejbs.UserBean;
 import app.entities.Publicacao;

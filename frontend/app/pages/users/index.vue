@@ -84,7 +84,7 @@
                 <!-- Edit -->
                 <UTooltip text="Ver Publicações">
                   <UButton icon="i-heroicons-document-magnifying-glass" size="md" class="icon-btn"
-                           :to="`/users/${user.username}/publications`"/>
+                           :to="`/users/${row.original.username}/publications`"/>
                 </UTooltip>
 
 
