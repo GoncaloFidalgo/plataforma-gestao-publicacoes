@@ -269,66 +269,120 @@
 
           <!-- 2. COMMENTS TAB -->
           <template #comments="{ item }">
-            <div
-                v-if="authStore.isAdmin || authStore.isResponsavel"
-                class="sticky top-0 bg-white dark:bg-gray-900 z-10 px-4 py-2 border-b border-gray-100 dark:border-gray-800"
-            >
-              <USelectMenu
-                  v-model="commentsFilter"
-                  :items="filterOptions"
-                  option-attribute="label"
-                  placeholder="Filter comments..."
-                  size="sm"
-                  :searchable="false"
-                  @change="refreshComments"
-              />
-            </div>
-            <div class="p-4 space-y-4 max-h-[700px] overflow-y-auto">
-              <div v-if="commentsLoading" class="flex justify-center py-4">
-                <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 animate-spin text-gray-400" />
+            <div class="flex flex-col h-full">
+              <!-- Admin Filter -->
+              <div
+                  v-if="authStore.isAdmin || authStore.isResponsavel"
+                  class="sticky top-0 bg-white dark:bg-gray-900 z-10 px-4 py-2 border-b border-gray-100 dark:border-gray-800"
+              >
+                <USelectMenu
+                    v-model="commentsFilter"
+                    :items="filterOptions"
+                    option-attribute="label"
+                    placeholder="Filter comments..."
+                    size="sm"
+                    :searchable="false"
+                    @change="refreshComments"
+                />
               </div>
 
-              <div v-else-if="comments.length === 0" class="text-center text-gray-500 py-8 text-sm">
-                No comments yet.
-              </div>
-
-              <div v-else v-for="comment in comments" :key="comment.id"   class="rounded-lg p-3 relative group transition-colors" :class="comment.hidden ? 'bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50' : 'bg-gray-50 dark:bg-gray-800'">
-                <div v-if="comment.hidden" class="absolute top-2 right-8 flex items-center gap-1">
-                  <span class="text-[10px] font-bold text-red-500 uppercase">Hidden</span>
-                </div>
-                <div v-if="authStore.isAdmin || authStore.isResponsavel" class="absolute top-2 right-2">
-                  <UDropdownMenu
-                      :items="getCommentActions(comment)"
-                      :content="{ align: 'end' }"
-                  >
+              <!-- ADD COMMENT FORM -->
+              <div class="p-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20">
+                <UForm :state="{ text: newComment }" @submit="submitComment">
+                  <UTextarea
+                      v-model="newComment"
+                      placeholder="Write a comment..."
+                      :rows="2"
+                      size="sm"
+                      class="w-full mb-2"
+                  />
+                  <div class="flex justify-end">
                     <UButton
-                        color="gray"
-                        variant="ghost"
-                        icon="i-heroicons-ellipsis-vertical"
-                        size="2xs"
-                        :class="comment.hidden ? 'text-red-400 hover:text-red-600' : 'text-gray-400 hover:text-gray-600'"
+                        type="submit"
+                        label="Post Comment"
+                        size="xs"
+                        color="primary"
+                        :loading="submittingComment"
+                        :disabled="!newComment.trim()"
                     />
-                  </UDropdownMenu>
-                </div>
-                <div class="flex items-center gap-2 mb-2">
-                  <UAvatar :alt="comment.name" size="xs" />
-
-                  <div class="flex flex-col">
-                    <span class="font-bold text-sm text-gray-900 dark:text-white leading-none">
-                      {{ comment.name }}
-                    </span>
-                    <span class="text-[10px] text-gray-500 mt-0.5">
-                      {{ new Date(comment.date).toLocaleDateString() }}
-                    </span>
                   </div>
+                </UForm>
+              </div>
+
+              <!-- COMMENTS LIST -->
+              <div class="p-4 space-y-4 flex-1 overflow-y-auto">
+                <div v-if="commentsLoading" class="flex justify-center py-4">
+                  <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 animate-spin text-gray-400" />
                 </div>
 
-                <!-- Comment Text -->
-                <p class="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                  {{ comment.comment }}
-                </p>
-                <div v-if="comment.hidden && comment.motive" class="mt-2 text-[10px] text-red-500 border-t border-red-100 dark:border-red-900/30 pt-1">
-                  <strong>Motive:</strong> {{ comment.motive }}
+                <div v-else-if="sortedComments.length === 0" class="text-center text-gray-500 py-8 text-sm">
+                  No comments yet.
+                </div>
+
+                <div
+                    v-else
+                    v-for="comment in sortedComments"
+                    :key="comment.id"
+                    class="rounded-lg p-3 relative group transition-colors"
+                    :class="comment.hidden ? 'bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50' : 'bg-gray-50 dark:bg-gray-800'"
+                >
+                  <!-- Hidden Indicator -->
+                  <div v-if="comment.hidden" class="absolute top-2 right-8 flex items-center gap-1">
+                    <span class="text-[10px] font-bold text-red-500 uppercase">Hidden</span>
+                  </div>
+
+                  <!-- Action Menu (Admin/Resp OR Owner) -->
+                  <div class="absolute top-2 right-2">
+                    <UDropdownMenu
+                        v-if="getCommentActions(comment).length > 0"
+                        :items="getCommentActions(comment)"
+                        :content="{ align: 'end' }"
+                    >
+                      <UButton
+                          color="gray"
+                          variant="ghost"
+                          icon="i-heroicons-ellipsis-vertical"
+                          size="2xs"
+                          :class="comment.hidden ? 'text-red-400 hover:text-red-600' : 'text-gray-400 hover:text-gray-600'"
+                      />
+                    </UDropdownMenu>
+                  </div>
+
+                  <!-- Header -->
+                  <div class="flex items-center gap-2 mb-2 pr-6">
+                    <UAvatar :alt="comment.name" size="xs" :class="{ 'opacity-50': comment.hidden }" />
+                    <div class="flex flex-col" :class="{ 'opacity-50': comment.hidden }">
+                      <span class="font-bold text-sm text-gray-900 dark:text-white leading-none">
+                        {{ comment.name }}
+                      </span>
+                      <span class="text-[10px] text-gray-500 mt-0.5">
+                        {{ new Date(comment.date).toLocaleDateString() }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- EDIT MODE -->
+                  <div v-if="editingId === comment.id">
+                    <UTextarea v-model="editingText" :rows="2" size="sm" class="mb-2" />
+                    <div class="flex gap-2 justify-end">
+                      <UButton label="Cancel" size="2xs" color="gray" variant="ghost" @click="cancelEdit" />
+                      <UButton label="Save" size="2xs" color="primary" @click="saveEdit(comment)" />
+                    </div>
+                  </div>
+
+                  <!-- VIEW MODE -->
+                  <div v-else>
+                    <p
+                        class="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap"
+                        :class="{ 'opacity-50 italic': comment.hidden }"
+                    >
+                      {{ comment.comment }}
+                    </p>
+
+                    <div v-if="comment.hidden && comment.motive" class="mt-2 text-[10px] text-red-500 border-t border-red-100 dark:border-red-900/30 pt-1">
+                      <strong>Motive:</strong> {{ comment.motive }}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -383,6 +437,7 @@
 const pubStore = usePublicationStore()
 const authStore = useAuthStore()
 const tagStore = useTagStore()
+const apiStore = useAPIStore()
 const toast = useToast()
 
 definePageMeta({ layout: 'default' })
@@ -507,7 +562,21 @@ const openSidePanel = async (row) => {
     userRatingObj.value = await pubStore.fetchUserRating(row.id)
   } catch (e) { /* ignore */ }
 }
+const sortedComments = computed(() => {
+  if (!comments.value) return []
+  const currentUsername = authStore.currentUser?.username
 
+  return [...comments.value].sort((a, b) => {
+    // 1. Own comments first
+    const aIsOwn = a.username === currentUsername
+    const bIsOwn = b.username === currentUsername
+    if (aIsOwn && !bIsOwn) return -1
+    if (!aIsOwn && bIsOwn) return 1
+
+    // 2. Sort by Date Descending
+    return new Date(b.date) - new Date(a.date)
+  })
+})
 const refreshComments = async () => {
   if (!selectedPub.value) return
   commentsLoading.value = true
@@ -515,7 +584,6 @@ const refreshComments = async () => {
 
   try {
     const filterValue = commentsFilter.value ? commentsFilter.value.value : false
-    console.log(filterValue)
     comments.value = await pubStore.fetchComments(selectedPub.value.id, filterValue)
   } catch (e) {
     console.error("Failed to load comments", e)
@@ -523,20 +591,92 @@ const refreshComments = async () => {
     commentsLoading.value = false
   }
 }
-
+const newComment = ref('')
+const submittingComment = ref(false)
+const editingId = ref(null)
+const editingText = ref('')
 // --- COMMENT MANAGEMENT ---
+// --- COMMENT CRUD ---
 
-const getCommentActions = (comment) => [
-  [{
-    label: comment.hidden ? 'Show Comment' : 'Hide Comment',
-    icon: comment.hidden ? 'i-heroicons-eye' : 'i-heroicons-eye-slash',
-    onSelect: () => {
-      commentToToggle.value = comment
-      visibilityMotive.value = comment.motive || ''
-      isVisibilityModalOpen.value = true
-    }
-  }]
-]
+const submitComment = async () => {
+  if (!newComment.value.trim() || !selectedPub.value) return
+  submittingComment.value = true
+
+  try {
+    await apiStore.createComment(selectedPub.value.id, { comment: newComment.value })
+    toast.add({ title: 'Comment added', color: 'green' })
+    newComment.value = ''
+    await refreshComments()
+  } catch (error) {
+    toast.add({ title: 'Error', description: error.response?.data?.message || 'Failed to post comment', color: 'red' })
+  } finally {
+    submittingComment.value = false
+  }
+}
+
+const startEdit = (comment) => {
+  editingId.value = comment.id
+  editingText.value = comment.comment
+}
+
+const cancelEdit = () => {
+  editingId.value = null
+  editingText.value = ''
+}
+
+const saveEdit = async (comment) => {
+  if (!editingText.value.trim()) return
+
+  try {
+    await apiStore.updateComment(selectedPub.value.id, comment.id, { comment: editingText.value })
+    toast.add({ title: 'Comment updated', color: 'green' })
+    editingId.value = null
+    await refreshComments()
+  } catch (error) {
+    toast.add({ title: 'Error', description: error.response?.data?.message, color: 'red' })
+  }
+}
+
+const handleDeleteComment = async (comment) => {
+  if (!confirm('Are you sure you want to delete this comment?')) return
+
+  try {
+    await apiStore.deleteComment(selectedPub.value.id, comment.id)
+    toast.add({ title: 'Comment deleted', color: 'green' })
+    await refreshComments()
+  } catch (error) {
+    toast.add({ title: 'Error', description: error.response?.data?.message, color: 'red' })
+  }
+}
+const getCommentActions = (comment) => {
+  const actions = []
+  const isOwner = authStore.currentUser?.username === comment.username
+  const isPrivileged = authStore.isAdmin || authStore.isResponsavel
+
+  // Owner actions
+  if (isOwner) {
+    actions.push([
+      { label: 'Edit', icon: 'i-heroicons-pencil-square', onSelect: () => startEdit(comment) },
+      { label: 'Delete', icon: 'i-heroicons-trash', color: 'red', onSelect: () => handleDeleteComment(comment) }
+    ])
+  }
+
+  // Admin actions
+  if (isPrivileged) {
+    actions.push([
+      {
+        label: comment.hidden ? 'Show Comment' : 'Hide Comment',
+        icon: comment.hidden ? 'i-heroicons-eye' : 'i-heroicons-eye-slash',
+        onSelect: () => {
+          commentToToggle.value = comment
+          visibilityMotive.value = comment.motive || ''
+          isVisibilityModalOpen.value = true
+        }
+      }
+    ])
+  }
+  return actions
+}
 
 const confirmVisibilityChange = async () => {
   if (!selectedPub.value || !commentToToggle.value) return
