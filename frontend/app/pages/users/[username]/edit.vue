@@ -137,7 +137,6 @@ const handleSubmit = async () => {
   loading.value = true
 
   try {
-    console.log(user.value)
     await usersStore.updateUser(user.value.username, {
       name: form.value.name,
       email: form.value.email,

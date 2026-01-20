@@ -14,7 +14,60 @@
           to="/publications/create"
       />
     </div>
+      <div class="flex gap-3 items-center bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+        <UIcon name="i-heroicons-funnel" class="w-5 h-5 text-gray-400" />
 
+        <!-- Search Input -->
+        <UInput
+            v-model="search"
+            icon="i-heroicons-magnifying-glass"
+            placeholder="Search titles..."
+            size="sm"
+            class="flex-1 min-w-[200px]"
+        />
+
+        <!-- Hidden Status Filter (Admins/Resp only) -->
+        <USelectMenu
+            v-if="authStore.isAdmin || authStore.isResponsavel"
+            v-model="pubHiddenFilter"
+            :items="pubFilterOptions"
+            option-attribute="label"
+            placeholder="Visibility"
+            class="w-40"
+            size="sm"
+            :searchable="false"
+        >
+          <template #label>
+            <span class="truncate">{{ pubHiddenFilter.label }}</span>
+          </template>
+        </USelectMenu>
+
+        <!-- Tags Filter (Multi-select) -->
+        <USelectMenu
+            v-model="selectedTags"
+            :items="tagOptions"
+            placeholder="Filter by Tags"
+            multiple
+            searchable
+            class="w-48"
+            size="sm"
+        >
+          <template #label>
+            <span v-if="selectedTags.length" class="truncate">{{ selectedTags.join(', ') }}</span>
+            <span v-else class="text-gray-500">Filter by Tags</span>
+          </template>
+        </USelectMenu>
+
+        <!-- Clear Filters -->
+        <UButton
+            v-if="selectedTags.length > 0 || search !== ''"
+            icon="i-heroicons-x-mark"
+            color="gray"
+            variant="ghost"
+            size="xs"
+            @click="clearFilters"
+        />
+      </div>
     <!-- Table -->
     <UCard :ui="{ body: { padding: '' } }">
       <UTable
@@ -22,16 +75,6 @@
           :columns="columns"
           :loading="pubStore.loading"
       >
-        <!-- Custom Cell: Type (Icon) -->
-        <template #fileType-cell="{ row }">
-          <UBadge
-              :color="row.original.fileType === 'pdf' ? 'red' : 'yellow'"
-              variant="subtle"
-              size="xs"
-          >
-            {{ row.original.fileType ? row.original.fileType.toUpperCase() : 'FILE' }}
-          </UBadge>
-        </template>
         <template #ratingAverage-cell="{ row }">
           <div class="flex items-center gap-1 text-gray-700 dark:text-gray-200">
             <span class="font-semibold text-sm">{{ row.original.ratingAverage || '0.0' }}</span>
@@ -339,12 +382,12 @@
 <script setup >
 const pubStore = usePublicationStore()
 const authStore = useAuthStore()
+const tagStore = useTagStore()
 const toast = useToast()
 
 definePageMeta({ layout: 'default' })
 
 const columns = [
-  { accessorKey: 'fileType', header: 'Type' },
   { accessorKey: 'titulo', header: 'Title' },
   { accessorKey: 'areaCientifica', header: 'Area' },
   { accessorKey: 'tipo', header: 'Category' },
@@ -354,12 +397,50 @@ const columns = [
   { id: 'actions', header: '' }
 ]
 
+// --- PUBLICATION FILTER STATE ---
 const search = ref('')
+const selectedTags = ref([])
+const pubFilterOptions = [
+  { label: 'All Publications', value: null },
+  { label: 'Visible Only', value: false },
+  { label: 'Hidden Only', value: true }
+]
+const pubHiddenFilter = ref(pubFilterOptions[1]) // Default Visible
+
+const tagOptions = computed(() => {
+  return tagStore.tags
+      .filter(t => !t.hidden)
+      .map(t => t.name)
+})
+
 const filteredPublications = computed(() => {
-  if (!search.value) return pubStore.publications
-  return pubStore.publications.filter(p =>
-      p.titulo.toLowerCase().includes(search.value.toLowerCase())
-  )
+  let pubs = pubStore.publications
+
+  // 1. Filter by Hidden Status
+  if (authStore.isAdmin || authStore.isResponsavel) {
+    if (pubHiddenFilter.value.value !== null) {
+      pubs = pubs.filter(p => p.hidden === pubHiddenFilter.value.value)
+    }
+  } else {
+    // Normal users always see visible only
+    pubs = pubs.filter(p => p.hidden === false)
+  }
+
+  // 2. Filter by Search
+  if (search.value) {
+    pubs = pubs.filter(p =>
+        p.titulo.toLowerCase().includes(search.value.toLowerCase())
+    )
+  }
+
+  // 3. Filter by Tags
+  if (selectedTags.value.length > 0) {
+    pubs = pubs.filter(p =>
+        p.tags.some(t => selectedTags.value.includes(t))
+    )
+  }
+
+  return pubs
 })
 
 // Side Panel State
@@ -401,8 +482,12 @@ const hoverRating = ref(0)
 
 onMounted(() => {
   pubStore.fetchPublications()
-})
+  tagStore.fetchTags()
 
+  if (authStore.isAdmin || authStore.isResponsavel) {
+    pubHiddenFilter.value = pubFilterOptions[0] // All
+  }
+})
 const openSidePanel = async (row) => {
   selectedPub.value = row
   displayRatingAverage.value = row.ratingAverage || 0.0
@@ -541,6 +626,7 @@ const handleClearRating = async () => {
 const handleDownload = async (pub) => {
   if (!pub) return
   downloadingId.value = pub.id
+  
   try {
     await pubStore.downloadFile(pub.id, pub.titulo, pub.fileType)
     toast.add({ title: 'Download started', color: 'green' })

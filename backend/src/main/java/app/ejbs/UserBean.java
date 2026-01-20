@@ -152,6 +152,22 @@ public class UserBean {
         }
     }
 
+    public void updatePersonalData(String username, String newName, String email) {
+        User user = entityManager.find(User.class, username);
+        if (user == null) {
+            throw new IllegalArgumentException("User " + username + " not found");
+        }
+        entityManager.lock(user, jakarta.persistence.LockModeType.OPTIMISTIC);
+
+        if (newName != null) {
+            user.setName(newName);
+        }
+
+        if (email != null) {
+            user.setEmail(email);
+        }
+    }
+
     public void deleteUser(String username) {
         User user = entityManager.find(User.class, username);
         if (user == null) {

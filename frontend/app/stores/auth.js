@@ -22,7 +22,7 @@ export const useAuthStore = defineStore('auth', () => {
     const isColaborador = computed(() => {
         const user = currentUser.value
         if (!user) return false
-        return user.role === 3 || user.roleType.toLowerCase() === 'Colaborador'
+        return user.role === 3 || user.roleType.toLowerCase() === 'colaborador'
     })
 
     const login = async (credentials) => {
@@ -52,6 +52,25 @@ export const useAuthStore = defineStore('auth', () => {
         }
     }
 
+    const updateMe = async (payload) => {
+        try {
+            const updated = await apiStore.updateMe(payload) // PUT /users/me
+            currentUser.value = updated // <- isto remove a necessidade de refresh
+            return updated
+        } catch (error) {
+            console.error('Erro ao atualizar dados pessoais:', error.response?.data || error)
+            throw error
+        }
+}
+
+    const recoverPassword = async (email) => {
+        return await apiStore.recoverPassword(email)
+    }
+
+    const resetPassword = async (payload) => {
+        return await apiStore.resetPassword(payload)
+    }
+
     const logout = async () => {
         apiStore.token = null
         currentUser.value = null
@@ -73,6 +92,9 @@ export const useAuthStore = defineStore('auth', () => {
         login,
         logout,
         authUser,
-        changePassword
+        recoverPassword,
+        resetPassword,
+        changePassword,
+        updateMe
     }
 })

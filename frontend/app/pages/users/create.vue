@@ -114,15 +114,12 @@ const roles = [
 
 
 const onSubmit = async () => {
-  console.log('✅ SUBMIT CLICKED', { ...form })
 
   try {
     const payload = { ...form, role: Number(form.role) }
-    console.log('🟡 antes createUser', usersStore.users /* ou o array que uses */)
 
     await usersStore.createUser(payload)
 
-    console.log('🟢 depois createUser', usersStore.users)
 
 
     await router.push(`/users`)

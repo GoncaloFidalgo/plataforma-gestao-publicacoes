@@ -15,3 +15,21 @@ Content-Type: application/json
 GET http://localhost:8080/academics/api/auth/user
 Accept: application/json
 Authorization: Bearer {{auth_token}}
+
+
+### Update User
+PUT http://localhost:8080/academics/api/users/me
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+
+{
+  "name": "joao1",
+  "email": "joao.silva@gmail.com"
+}
+
+### Get User
+GET http://localhost:8080/academics/api/users/me
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+

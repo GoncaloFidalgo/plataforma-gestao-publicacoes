@@ -53,7 +53,6 @@
             title="Login Failed"
             :description="errorMessage"
         />
-
         <UButton
             type="submit"
             :loading="loading"
@@ -65,6 +64,10 @@
           Sign In
         </UButton>
       </UForm>
+      
+      <NuxtLink to="/login/recover-password" class="text-sm underline opacity-80 hover:opacity-100">
+          Esqueceste-te da palavra-passe?
+      </NuxtLink>
 
     </UCard>
   </div>
