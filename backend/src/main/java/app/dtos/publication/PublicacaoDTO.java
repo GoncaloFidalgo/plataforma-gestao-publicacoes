@@ -1,4 +1,4 @@
-package app.dtos;
+package app.dtos.publication;
 
 import app.entities.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -21,6 +21,7 @@ public class PublicacaoDTO implements Serializable {
     private String resumo;
     private Boolean hidden;
     private Double ratingAverage;
+    private Long ratingCount;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private LocalDateTime createdAt;
@@ -81,6 +82,7 @@ public class PublicacaoDTO implements Serializable {
                         .average()
                         .orElse(0.0);
                 dto.setRatingAverage(Math.round(average * 10.0) / 10.0);
+                dto.setRatingCount((long) p.getRatings().size());
             } else {
                 dto.setRatingAverage(0.0);
             }
@@ -107,6 +109,7 @@ public class PublicacaoDTO implements Serializable {
     }
 
     public static class RatingDTO implements Serializable {
+        public Long id;
         public int value;
         public String username;
         public static RatingDTO from(Rating r) {
@@ -115,6 +118,7 @@ public class PublicacaoDTO implements Serializable {
             if (r.getUser() != null) {
                 d.username = r.getUser().getUsername();
             }
+            d.id = r.getId();
             return d;
         }
     }
@@ -123,7 +127,7 @@ public class PublicacaoDTO implements Serializable {
         public String text;
         public String username;
         public LocalDateTime createdAt;
-        public static ComentarioDTO from(Comentario c) {
+        public static ComentarioDTO from(Comment c) {
             ComentarioDTO d = new ComentarioDTO();
             d.text = c.getText();
             if (c.getUser() != null) {
@@ -151,32 +155,54 @@ public class PublicacaoDTO implements Serializable {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
+
     public String getTipo() { return tipo; }
     public void setTipo(String tipo) { this.tipo = tipo; }
+
     public String getAreaCientifica() { return areaCientifica; }
     public void setAreaCientifica(String areaCientifica) { this.areaCientifica = areaCientifica; }
+
     public String getDescricao() { return descricao; }
     public void setDescricao(String descricao) { this.descricao = descricao; }
+
     public String getFile() { return file; }
     public void setFile(String file) { this.file = file; }
+
     public String getFileType() { return fileType; }
     public void setFileType(String fileType) { this.fileType = fileType; }
+
     public String getResumo() { return resumo; }
     public void setResumo(String resumo) { this.resumo = resumo; }
+
     public Boolean getHidden() { return hidden; }
     public void setHidden(Boolean hidden) { this.hidden = hidden; }
+
     public Double getRatingAverage() { return ratingAverage; }
     public void setRatingAverage(Double ratingAverage) { this.ratingAverage = ratingAverage; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
     public String getCreatorUsername() { return creatorUsername; }
     public void setCreatorUsername(String creatorUsername) { this.creatorUsername = creatorUsername; }
+
     public String getCreatorName() { return creatorName; }
     public void setCreatorName(String creatorName) { this.creatorName = creatorName; }
+
     public List<AuthorInfo> getAutores() { return autores; }
     public void setAutores(List<AuthorInfo> autores) { this.autores = autores; }
+
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }
+
+    public Long getRatingCount() {
+        return ratingCount;
+    }
+
+    public void setRatingCount(Long ratingCount) {
+        this.ratingCount = ratingCount;
+    }
 }

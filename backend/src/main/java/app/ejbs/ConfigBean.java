@@ -54,15 +54,14 @@ public class ConfigBean {
 
             // 4. Publications
             if (publicacaoBean.findAll(null, "Introduction to Java", null, null, null, null).isEmpty()) {
-                InputStream content = new ByteArrayInputStream("Content".getBytes(StandardCharsets.UTF_8));
-
+                InputStream content = getClass().getClassLoader().getResourceAsStream("test.zip");
                 publicacaoBean.create(
                         "Introduction to Java",
                         tutorialType.getId(),
                         Arrays.asList("colab"),
                         csArea.getId(),
                         "Desc",
-                        content, ".pdf",
+                        content, ".zip",
                         Arrays.asList("Java"),
                         "colab"
                 );

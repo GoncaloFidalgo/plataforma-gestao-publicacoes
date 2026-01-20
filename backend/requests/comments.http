@@ -1,0 +1,107 @@
+### 1. LOGIN (Get Token)
+POST http://localhost:8080/academics/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "resp",
+  "password": "123"
+}
+
+> {%
+    client.global.set("auth_token", response.body);
+%}
+
+### --- SETUP FOR PUBLICATION ---
+
+### 2. Get Type ID
+GET http://localhost:8080/academics/api/references/types
+Authorization: Bearer {{auth_token}}
+
+> {%
+    if (response.body.length > 0) client.global.set("type_id", response.body[0].id);
+%}
+
+### 3. Get Area ID
+GET http://localhost:8080/academics/api/references/areas
+Authorization: Bearer {{auth_token}}
+
+> {%
+    if (response.body.length > 0) client.global.set("area_id", response.body[0].id);
+%}
+
+### 4. Create Publication (Parent for comments)
+POST http://localhost:8080/academics/api/publications
+Authorization: Bearer {{auth_token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="metadata"
+Content-Type: application/json
+
+{
+  "titulo": "Publication for Comments Test",
+  "tipoId": {{type_id}},
+  "areaId": {{area_id}},
+  "descricao": "Testing comments section.",
+  "autores": ["admin"],
+  "tags": ["Java"],
+  "hidden": false
+}
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="test.pdf"
+Content-Type: application/pdf
+
+< ./test.pdf
+--WebAppBoundary--
+
+> {%
+    client.global.set("publication_id", response.body.id);
+%}
+
+### --- COMMENTS ENDPOINTS ---
+
+### 5. Create Comment (EP42)
+POST http://localhost:8080/academics/api/publications/{{publication_id}}/comments
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "comment": "This is an excellent article! Very insightful. This is an excellent article! Very insightful. This is an excellent article! Very insightful."
+}
+
+> {%
+    // Capture ID for update/delete tests
+    client.global.set("comment_id", response.body.id);
+%}
+
+### 6. List Comments (EP46)
+GET http://localhost:8080/academics/api/publications/{{publication_id}}/comments
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+### 7. Update Comment (EP44 - Author Only)
+PATCH http://localhost:8080/academics/api/publications/{{publication_id}}/comments/{{comment_id}}
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "comment": "Update: This article had some errors in equation 5."
+}
+
+### 8. Hide Comment (EP43 - Admin/Resp Only)
+PATCH http://localhost:8080/academics/api/publications/{{publication_id}}/comments/{{comment_id}}/visibility
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "hidden": true,
+  "motive": "Inappropriate language"
+}
+
+### 9. Verify Hidden Status (Admin can see it with ?hidden=true)
+GET http://localhost:8080/academics/api/publications/{{publication_id}}/comments?hidden=false
+Authorization: Bearer {{auth_token}}
+
+### 10. Delete Comment (EP45 - Author Only)
+DELETE http://localhost:8080/academics/api/publications/{{publication_id}}/comments/{{comment_id}}
+Authorization: Bearer {{auth_token}}

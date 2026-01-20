@@ -96,11 +96,6 @@ const pubStore = usePublicationStore()
 const tagStore = useTagStore()
 const toast = useToast()
 
-definePageMeta({
-  layout: 'default',
-  // Ensure middleware protects this route if needed
-  // middleware: 'auth'
-})
 
 // State
 const uploading = ref(false)
@@ -114,10 +109,9 @@ const state = reactive({
   descricao: '',
   tags: [],
   hidden: false,
-  file: null // Will verify this manually
+  file: null
 })
 
-// Load Tags for the select menu
 const tagOptions = computed(() => tagStore.tags.map(t => t.name))
 
 onMounted(() => {
@@ -126,7 +120,6 @@ onMounted(() => {
   }
 })
 
-// Zod Schema
 const schema = z.object({
   titulo: z.string().min(3, 'Title must be at least 3 characters'),
   tipo: z.string().min(1, 'Type is required'),
@@ -146,13 +139,13 @@ const handleFileChange = (event) => {
   if (!validTypes.includes(file.type) && !file.name.endsWith('.pdf') && !file.name.endsWith('.zip')) {
     fileError.value = 'Only PDF or ZIP files are allowed.'
     state.file = null
-    event.target.value = '' // Reset input
+    event.target.value = ''
     return
   }
 
-  // Validate size (e.g., 50MB)
-  if (file.size > 50 * 1024 * 1024) {
-    fileError.value = 'File size exceeds 50MB.'
+  // Validate size
+  if (file.size > 10 * 1024 * 1024) {
+    fileError.value = 'File size exceeds 10MB.'
     state.file = null
     event.target.value = ''
     return
@@ -170,11 +163,10 @@ const handleSubmit = async () => {
 
   uploading.value = true
   try {
-    // Current user is automatically the author/creator via the token
-    // If you need "autores", you can add a field for it.
+
     await pubStore.create({
       ...state,
-      autores: [] // Assuming backend handles current user as default
+      autores: []
     })
 
     toast.add({ title: 'Success', description: 'Publication uploaded successfully!', color: 'green' })

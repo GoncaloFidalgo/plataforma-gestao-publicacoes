@@ -159,6 +159,19 @@ export const useAPIStore = defineStore('api', () => {
         })
     }
 
+    const getPublicationComments = (id, hidden) => {
+        const headers = authHeader()
+        if (!headers) return []
+
+        const params = {}
+        if (hidden === true || hidden === false) {
+            params.hidden = hidden
+        }
+
+        return axios.get(`${API_BASE_URL}/publications/${id}/comments`, { headers, params }).then(r => r.data)
+    }
+
+
     //#endregion
     // --- REFERENCE DATA (Types & Areas) ---
 
@@ -196,7 +209,36 @@ export const useAPIStore = defineStore('api', () => {
         return axios.delete(`${API_BASE_URL}/references/areas/${id}`, { headers })
     }
 
+// RATINGS
+    const addRating = (pubId, rating) => {
+        const headers = authHeader()
+        // Send as { rating: 5 }
+        return axios.post(`${API_BASE_URL}/publications/${pubId}/ratings`, { rating }, { headers })
+    }
 
+    const updateRating = (pubId, ratingId, rating) => {
+        const headers = authHeader()
+        return axios.patch(`${API_BASE_URL}/publications/${pubId}/ratings/${ratingId}`, { rating }, { headers })
+    }
+
+    const deleteRating = (pubId, ratingId) => {
+        const headers = authHeader()
+        return axios.delete(`${API_BASE_URL}/publications/${pubId}/ratings/${ratingId}`, { headers })
+    }
+    const getUserRating = (id) => {
+        const headers = authHeader()
+        if (!headers) return null
+        return axios.get(`${API_BASE_URL}/publications/${id}/ratings/me`, { headers }).then(r => r.data || null)
+    }
+
+    const updateCommentVisibility = (pubId, commentId, hidden, motive) => {
+        const headers = authHeader()
+        return axios.patch(
+            `${API_BASE_URL}/publications/${pubId}/comments/${commentId}/visibility`,
+            { hidden, motive },
+            { headers }
+        )
+    }
     return {
         token,
         postLogin,
@@ -217,5 +259,9 @@ export const useAPIStore = defineStore('api', () => {
         updateMe,
         getTypes, createType, deleteType,
         getAreas, createArea, deleteArea,
+        getPublicationComments,
+        addRating, updateRating, deleteRating,
+        getUserRating,
+        updateCommentVisibility,
     }
 })

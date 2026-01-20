@@ -84,9 +84,9 @@ public class User extends Versionable implements Serializable {
     }
 
     @OneToMany(mappedBy = "user")
-    private List<Comentario> comentarios;
-    public List<Comentario> getComentarios() { return comentarios; }
-    public void setComentarios(List<Comentario> comentarios) { this.comentarios = comentarios; }
+    private List<Comment> comments;
+    public List<Comment> getComentarios() { return comments; }
+    public void setComentarios(List<Comment> comments) { this.comments = comments; }
 
     @OneToMany(mappedBy = "user")
     private List<Rating> ratings;
@@ -107,7 +107,7 @@ public class User extends Versionable implements Serializable {
         this.email = email;
         this.active = true;
 
-        comentarios = new ArrayList<>();
+        comments = new ArrayList<>();
         ratings = new ArrayList<>();
         tagsSubscritas = new HashSet<>();
     }

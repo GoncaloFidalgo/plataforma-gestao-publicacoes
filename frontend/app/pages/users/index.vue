@@ -16,112 +16,154 @@
         </NuxtLink>
       </header>
 
-      <div class="table-wrapper">
-        <table class="data-table users-table">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Estado</th>
-              <th class="text-right pr-4">Ver</th>
-              <th class="text-right pr-4">Ações</th>
-            </tr>
-          </thead>
+        <div class="table-wrapper">
+          <UTable :data="filteredUsers" :columns="columns" :loading="userStore.loading" class="data-table">
+            <!-- Name  -->
+            <template #name-cell="{ row }">
+              <NuxtLink :to="`/users/${row.original.username}`" class="link-quiet">
+                {{ row.original.name }}
+              </NuxtLink>
+            </template>
 
-          <tbody>
-            <tr v-for="user in users" :key="user.username">
-              <td>
-                <NuxtLink :to="`/users/${user.username}`" class="link-quiet">
-                  {{ user.name }}
-                </NuxtLink>
-              </td>
-              <td class="font-mono text-xs">
-                {{ user.username }}
-              </td>
-              <td>
-                {{ user.email }}
-              </td>
-              <td>
+            <!--  Username -->
+            <template #username-cell="{ row }">
+                <span class="font-mono text-xs">
+                    {{ row.original.username }}
+                </span>
+            </template>
+
+            <!--  Role-->
+            <template #roleType-cell="{ row }">
                 <span class="role-pill">
-                  {{ user.roleType}}
+                  {{ row.original.roleType }}
                 </span>
-              </td>
-              <td>
-                <span
-                  class="status-pill"
-                  :class="user.active ? 'status-pill--active' : 'status-pill--suspended'"
-                >
-                  {{ user.active ? 'Ativo' : 'Suspenso' }}
+            </template>
+
+            <!--  Status  -->
+            <template #active-cell="{ row }">
+                <span class="status-pill" :class="row.original.active ? 'status-pill--active' : 'status-pill--suspended'">
+                  {{ row.original.active ? 'Ativo' : 'Suspenso' }}
                 </span>
-              </td>
-              <td class="actions-cell">
+            </template>
+
+            <!-- Actions  -->
+            <template #actions-cell="{ row }">
+              <div class="actions-cell flex items-center justify-end gap-1.5">
+
                 <!-- Edit -->
-                <NuxtLink :to="`/users/${user.username}/publications`" class="icon-btn" title="Ver Publicações">
-                  <UIcon name="i-heroicons-document-magnifying-glass" class="w-5 h-5" />
-                </NuxtLink>
-              </td>
-             <td class="actions-cell">
-                <!-- Edit -->
-                <NuxtLink :to="`/users/${user.username}/edit`" class="icon-btn" title="Editar utilizador">
-                  <UIcon name="i-heroicons-pencil-square" class="w-5 h-5" />
-                </NuxtLink>
+                <UTooltip text="Editar utilizador">
+                  <UButton icon="i-heroicons-pencil-square" size="md" variant="ghost" class="icon-btn"
+                           :to="`/users/${row.original.username}/edit`"/>
+                </UTooltip>
 
                 <!-- Role -->
-                <NuxtLink :to="`/users/${user.username}/role`" class="icon-btn icon-btn--soft" title="Alterar role">
-                  <UIcon name="i-heroicons-shield-check" class="w-5 h-5" />
-                </NuxtLink>
+                <UTooltip text="Alterar role">
+                  <UButton icon="i-heroicons-shield-check" size="md" variant="ghost" class="icon-btn icon-btn--soft"
+                           :to="`/users/${row.original.username}/role`"
+                  />
+                </UTooltip>
 
                 <!-- Change Status -->
-                <NuxtLink :to="`/users/${user.username}/status`" class="icon-btn icon-btn--warning" title="Alterar estado">
-                  <UIcon name="i-heroicons-arrow-right-end-on-rectangle" class="w-5 h-5" />
-                </NuxtLink>
+                <UTooltip text="Alterar estado">
+                  <UButton icon="i-heroicons-arrow-right-end-on-rectangle" size="md" variant="ghost"
+                           class="icon-btn icon-btn--warning"
+                           :to="`/users/${row.original.username}/status`"/>
+                </UTooltip>
 
                 <!-- Remove -->
-                <button @click="remove(user)" class="icon-btn icon-btn--danger" title="Remover utilizador">
-                  <UIcon name="i-heroicons-trash" class="w-5 h-5" />
-                </button>
-              </td>
-            </tr>
+                <UTooltip text="Remover utilizador">
+                  <UButton icon="i-heroicons-trash" size="md" variant="ghost" class="icon-btn icon-btn--danger"
+                           @click="confirmDelete(row.original)"/>
+                </UTooltip>
 
-            <tr v-if="!users || users.length === 0">
-              <td colspan="6" class="empty-state">
-                Ainda não existem utilizadores registados.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              </div>
+            </template>
+            <template #view-cell="{ row }">
+              <div class="actions-cell flex items-center justify-end gap-1.5">
+
+                <!-- Edit -->
+                <UTooltip text="Ver Publicações">
+                  <UButton icon="i-heroicons-document-magnifying-glass" size="md" class="icon-btn"
+                           :to="`/users/${user.username}/publications`"/>
+                </UTooltip>
+
+
+              </div>
+            </template>
+          </UTable>
+        </div>
+
     </div>
+    <ConfirmDeleteModal
+        v-model="isDeleteModalOpen"
+        type="user"
+        :item-name="itemToDelete?.name"
+        :loading="deleting"
+        @confirm="executeDelete"
+    />
   </section>
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
-import { useUsersStore } from '~/stores/users.js'
+import {computed, onMounted} from 'vue'
+import {useUserStore} from '~/stores/user.js'
+
+const toast = useToast()
+
 definePageMeta({
   middleware: 'admin'
 })
-const usersStore = useUsersStore()
+const userStore = useUserStore()
 
-// ligar a tabela ao estado do store
-const users = computed(() => usersStore.users)
+const columns = [
+  {accessorKey: 'name', header: 'Nome'},
+  {accessorKey: 'username', header: 'Username'},
+  {accessorKey: 'email', header: 'Email'},
+  {accessorKey: 'roleType', header: 'Role'},
+  {accessorKey: 'active', header: 'Estado'},
+  {id: 'view', header: 'Ver', meta: {
+      class: {
+        th: 'text-center',
+      }
+    },
+  },
+  {id: 'actions', header: 'Ações', meta: {
+      class: {
+        th: 'text-center',
+      }
+    },
+  }
+]
+
 onMounted(async () => {
   try {
-    await usersStore.fetchUsers()
+    await userStore.fetchUsers()
   } catch (e) {
     console.error('Erro a carregar utilizadores:', e)
   }
 })
+const filteredUsers = computed(() => userStore.users)
+const isDeleteModalOpen = ref(false)
+const itemToDelete = ref(null)
+const deleting = ref(false)
 
-async function toggleStatus(user) {
-  await usersStore.setUserStatus(user.id, !user.active, 'Alterado pela listagem')
+const confirmDelete = (item) => {
+  itemToDelete.value = item
+  isDeleteModalOpen.value = true
 }
 
-async function remove(user) {
-  if (confirm(`Remover o utilizador ${user.username}?`)) {
-    await usersStore.deleteUser(user.username)
+const executeDelete = async () => {
+  if (!itemToDelete.value) return
+  deleting.value = true
+  try {
+    await userStore.deleteUser(itemToDelete.value.username)
+    toast.add({title: 'User deleted', color: 'green'})
+    isDeleteModalOpen.value = false
+  } catch (error) {
+    const msg = error.response?.data?.mensagem || 'Error deleting user'
+    toast.add({title: 'Error', description: msg, color: 'red'})
+  } finally {
+    deleting.value = false
   }
 }
 </script>
