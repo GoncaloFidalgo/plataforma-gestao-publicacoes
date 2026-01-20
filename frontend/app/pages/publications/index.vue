@@ -94,6 +94,7 @@ onMounted(() => {
 
 const handleDownload = async (pub) => {
   downloadingId.value = pub.id
+  
   try {
     await pubStore.downloadFile(pub.id, pub.titulo, pub.fileType)
     toast.add({ title: 'Download started', color: 'green' })

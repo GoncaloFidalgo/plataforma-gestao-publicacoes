@@ -162,6 +162,13 @@ const managementLinks = computed<NavigationMenuItem[]>(() => {
     })
   }
 
+
+  links.push({
+    label: 'My Publications',
+    icon: 'i-heroicons-document-magnifying-glass',
+    onSelect: () => navigateTo('/me/publications')
+  })
+
   return links
 })
 
@@ -170,7 +177,7 @@ const userDropdownItems = computed(() => [
   {
     label: 'My Account',
     icon: 'i-heroicons-user-circle',
-    onSelect: () => navigateTo('/account')
+    onSelect: () => navigateTo('/me')
   },
   {
     type: 'separator'

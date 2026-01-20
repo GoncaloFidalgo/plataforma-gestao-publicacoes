@@ -134,6 +134,21 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
+  const updateMe = async (payload) => {
+    const data = await apiStore.updateMe(payload)
+    if (data) {
+        users.value.push(data)
+      } else {
+        await fetchAuthenticatedUser()
+      }
+
+    return data
+  }
+
+  const fetchAuthenticatedUser = async () => {
+    const data = await apiStore.getAuthUser() // GET /auth/user
+    return data
+  }
   return {
     users,
     loading,
@@ -148,6 +163,8 @@ export const useUsersStore = defineStore('users', () => {
     deleteUser,
     setUserStatus,
     findByUsername,
-    setUserRole
+    setUserRole,
+    fetchAuthenticatedUser,
+    updateMe,
   }
 })

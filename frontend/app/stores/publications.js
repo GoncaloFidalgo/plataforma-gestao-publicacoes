@@ -9,8 +9,9 @@ export const usePublicationStore = defineStore('publications', () => {
     const fetchPublications = async () => {
         loading.value = true
         try {
-            const data  = await apiStore.getPublications()
+            const data = await apiStore.getPublications()
             publications.value = data || []
+
         } catch (error) {
             console.error('Error fetching publications:', error)
         } finally {
@@ -18,6 +19,39 @@ export const usePublicationStore = defineStore('publications', () => {
         }
     }
 
+    const fetchPublicationsByUser = async (username) => {
+        loading.value = true
+        try {
+            const data = await apiStore.getPublicationsByUser(username)
+            publications.value = data || []
+                        console.log("data",publications.value)
+            return publications.value
+        } catch (error) {
+            console.error('Error fetching user publications:', error)
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
+
+
+    const fetchMyPublications = async () => {
+        loading.value = true
+        error.value = null
+        try {
+            const data = await apiStore.getMyPublications()
+            publications.value = Array.isArray(data) ? data : []
+            console.log(data)
+            console.log(publications.value)
+            return publications.value
+        } catch (e) {
+            error.value = e
+            throw e
+        } finally {
+            loading.value = false
+        }
+    }
     // Download File Logic
     const downloadFile = async (id, title, type) => {
         try {
@@ -84,6 +118,8 @@ export const usePublicationStore = defineStore('publications', () => {
         loading,
         fetchPublications,
         downloadFile,
-        create
+        create,
+        fetchMyPublications,
+        fetchPublicationsByUser
     }
 })

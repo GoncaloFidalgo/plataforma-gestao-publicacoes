@@ -205,6 +205,17 @@ public class PublicacaoBean {
         return publicacao;
     }
 
+    public List<Publicacao> findPublicationsForUser(String username) {
+        return entityManager.createQuery("""
+        SELECT DISTINCT p
+        FROM Publicacao p 
+        WHERE p.createdBy.username= :username
+        ORDER BY p.createdAt DESC
+    """, Publicacao.class)
+                .setParameter("username", username)
+                .getResultList();
+    }
+
 
 
     public void delete(Long id) {

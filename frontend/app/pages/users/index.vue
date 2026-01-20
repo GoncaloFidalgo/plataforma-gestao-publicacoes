@@ -25,6 +25,7 @@
               <th>Email</th>
               <th>Role</th>
               <th>Estado</th>
+              <th class="text-right pr-4">Ver</th>
               <th class="text-right pr-4">Ações</th>
             </tr>
           </thead>
@@ -54,6 +55,12 @@
                 >
                   {{ user.active ? 'Ativo' : 'Suspenso' }}
                 </span>
+              </td>
+              <td class="actions-cell">
+                <!-- Edit -->
+                <NuxtLink :to="`/users/${user.username}/publications`" class="icon-btn" title="Ver Publicações">
+                  <UIcon name="i-heroicons-document-magnifying-glass" class="w-5 h-5" />
+                </NuxtLink>
               </td>
              <td class="actions-cell">
                 <!-- Edit -->

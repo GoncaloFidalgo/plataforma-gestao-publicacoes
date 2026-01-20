@@ -14,7 +14,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
     // 2. Protected Routes Logic:
     // Proteger contra users sem autenticação a tentar aceder a qualquer rota que não seja login
-    if (!authStore.isLoggedIn && to.path !== '/login') {
+    if (!authStore.isLoggedIn && !to.path.startsWith('/login')) {
         return navigateTo('/login')
     }
 
