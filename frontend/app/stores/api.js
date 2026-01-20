@@ -239,6 +239,20 @@ export const useAPIStore = defineStore('api', () => {
             { headers }
         )
     }
+    const createComment = (pubId, data) => {
+        const headers = authHeader()
+        return axios.post(`${API_BASE_URL}/publications/${pubId}/comments`, data, { headers })
+    }
+
+    const updateComment = (pubId, commentId, data) => {
+        const headers = authHeader()
+        return axios.patch(`${API_BASE_URL}/publications/${pubId}/comments/${commentId}`, data, { headers })
+    }
+
+    const deleteComment = (pubId, commentId) => {
+        const headers = authHeader()
+        return axios.delete(`${API_BASE_URL}/publications/${pubId}/comments/${commentId}`, { headers })
+    }
     return {
         token,
         postLogin,
@@ -263,5 +277,6 @@ export const useAPIStore = defineStore('api', () => {
         addRating, updateRating, deleteRating,
         getUserRating,
         updateCommentVisibility,
+        createComment,updateComment, deleteComment,
     }
 })
