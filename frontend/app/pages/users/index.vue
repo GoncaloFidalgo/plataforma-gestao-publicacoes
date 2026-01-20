@@ -16,9 +16,8 @@
         </NuxtLink>
       </header>
 
-      <div class="table-wrapper">
-        <UCard :ui="{ body: { padding: '' } }">
-          <UTable :data="filteredUsers" :columns="columns" :loading="userStore.loading" class="data-table users-table">
+        <div class="table-wrapper">
+          <UTable :data="filteredUsers" :columns="columns" :loading="userStore.loading" class="data-table">
             <!-- Name  -->
             <template #name-cell="{ row }">
               <NuxtLink :to="`/users/${row.original.username}`" class="link-quiet">
@@ -80,9 +79,8 @@
               </div>
             </template>
           </UTable>
-        </UCard>
+        </div>
 
-      </div>
     </div>
     <ConfirmDeleteModal
         v-model="isDeleteModalOpen"

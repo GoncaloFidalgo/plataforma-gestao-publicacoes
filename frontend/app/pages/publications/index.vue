@@ -1,6 +1,6 @@
 <template>
-  <div class="space-y-6">
-
+  <div class="flex gap-6 items-start relative">
+    <div class="flex-1 min-w-0 space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
@@ -29,10 +29,15 @@
               variant="subtle"
               size="xs"
           >
-            {{ row.original.fileType.toUpperCase() }}
+            {{ row.original.fileType ? row.original.fileType.toUpperCase() : 'FILE' }}
           </UBadge>
         </template>
-
+        <template #ratingAverage-cell="{ row }">
+          <div class="flex items-center gap-1 text-gray-700 dark:text-gray-200">
+            <span class="font-semibold text-sm">{{ row.original.ratingAverage || '0.0' }}</span>
+            <UIcon name="i-heroicons-star-solid" class="w-4 h-4 text-yellow-400 mb-0.5" />
+          </div>
+        </template>
         <!-- Custom Cell: Created At -->
         <template #createdAt-cell="{ row }">
           {{ new Date(row.original.createdAt).toLocaleDateString() }}
@@ -50,31 +55,303 @@
                 @click="handleDownload(row.original)"
             />
           </UTooltip>
+          <UTooltip text="View Details">
+            <UButton
+                icon="i-heroicons-eye"
+                size="xs"
+                color="gray"
+                variant="ghost"
+                @click="openSidePanel(row.original)"
+            />
+          </UTooltip>
         </template>
 
       </UTable>
     </UCard>
+
+    </div>
+    <aside
+        v-if="isPanelOpen"
+        class="w-96 flex-shrink-0 sticky top-0 h-[calc(100vh-5rem)] overflow-hidden"
+    >
+      <UCard class="h-full flex flex-col" :ui="{ body: { padding: 'p-0', base: 'flex-1 flex flex-col min-h-0' } }">
+
+        <!-- Panel Header -->
+        <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-start bg-gray-50 dark:bg-gray-800/50 rounded-t-lg">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white truncate pr-2 leading-tight">
+            {{ selectedPub?.titulo }}
+          </h2>
+          <UButton
+              color="gray"
+              variant="ghost"
+              icon="i-heroicons-x-mark-20-solid"
+              size="xs"
+              @click="isPanelOpen = false"
+          />
+        </div>
+
+        <!-- Panel Tabs -->
+        <UTabs   :items="tabs"
+                 class="flex flex-col flex-1 min-h-0"
+                 :ui="{ wrapper: 'space-y-0', container: 'flex-1 overflow-y-auto min-h-0' }">
+
+          <!-- 1. INFO TAB -->
+          <template #info="{ item }">
+            <div class="p-4 space-y-6">
+
+              <!-- Description -->
+              <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                {{ selectedPub?.descricao }}
+              </p>
+
+              <!-- Rating Block -->
+              <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+
+                <!-- Left: Average Rating Display -->
+                <div class="flex flex-col gap-1">
+                  <div class="flex items-center gap-1.5">
+                    <UIcon name="i-heroicons-star-solid" class="w-5 h-5 text-yellow-400" />
+                    <span class="font-bold text-xl text-gray-900 dark:text-white leading-none">
+                      {{ displayRatingAverage || '0.0' }}/5
+                    </span>
+                  </div>
+                  <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider pl-0.5">
+                    {{ displayRatingCount }} RATINGS
+                  </span>
+                </div>
+
+                <!-- Right: Interactive User Rating -->
+                <div class="flex flex-col items-end gap-1.5">
+                  <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    YOUR RATING
+                  </span>
+
+                  <div class="flex items-center gap-1" @mouseleave="hoverRating = 0">
+                    <button
+                        v-for="star in 5"
+                        :key="star"
+                        type="button"
+                        class="focus:outline-none transition-transform hover:scale-110 active:scale-95"
+                        @mouseenter="hoverRating = star"
+                        @click="handleRate(star)"
+                    >
+                      <UIcon
+                          :name="star <= (hoverRating || userRatingValue) ? 'i-heroicons-star-solid' : 'i-heroicons-star'"
+                          class="w-6 h-6 transition-colors duration-200"
+                          :class="star <= (hoverRating || userRatingValue) ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'"
+                      />
+                    </button>
+
+                    <!-- Clear Rating -->
+                    <UTooltip text="Remove Rating" v-if="userRatingValue > 0">
+                      <UButton
+                          icon="i-heroicons-x-mark"
+                          size="2xs"
+                          color="red"
+                          variant="ghost"
+                          :loading="ratingUpdating"
+                          @click="handleClearRating"
+                      />
+                    </UTooltip>
+                  </div>
+                </div>
+
+              </div>
+              <!-- Information Grid -->
+              <div>
+                <div class="flex justify-between items-center mb-3">
+                  <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                    Details
+                  </h3>
+                  <!-- Download-->
+                  <UButton
+                      label="Download"
+                      icon="i-heroicons-arrow-down-tray"
+                      size="xs"
+                      color="primary"
+                      variant="soft"
+                      :loading="downloadingId === selectedPub?.id"
+                      @click="handleDownload(selectedPub)"
+                  />
+                </div>
+                <dl class="space-y-3 text-sm">
+                  <div class="flex justify-between border-b border-gray-100 dark:border-gray-800 pb-2">
+                    <dt class="text-gray-500">Date</dt>
+                    <dd class="text-gray-900 dark:text-white font-medium">
+                      {{ selectedPub ? new Date(selectedPub.createdAt).toLocaleDateString() : '-' }}
+                    </dd>
+                  </div>
+                  <div class="flex justify-between border-b border-gray-100 dark:border-gray-800 pb-2">
+                    <dt class="text-gray-500">Type</dt>
+                    <dd class="text-gray-900 dark:text-white font-medium">
+                      {{ selectedPub?.tipo }}
+                    </dd>
+                  </div>
+                  <div class="flex justify-between border-b border-gray-100 dark:border-gray-800 pb-2">
+                    <dt class="text-gray-500">Area</dt>
+                    <dd class="text-gray-900 dark:text-white font-medium">
+                      {{ selectedPub?.areaCientifica }}
+                    </dd>
+                  </div>
+
+                  <div class="pt-2">
+                    <dt class="text-gray-500 mb-1">Authors</dt>
+                    <dd class="flex flex-wrap gap-1">
+                      <UBadge v-for="author in selectedPub?.autores" :key="author.username" color="gray" variant="subtle" size="sm">
+                        {{ author.name }}
+                      </UBadge>
+                    </dd>
+                  </div>
+
+                  <div class="pt-1">
+                    <dt class="text-gray-500 mb-1">Tags</dt>
+                    <dd class="flex flex-wrap gap-1">
+                      <UBadge v-for="tag in selectedPub?.tags" :key="tag" color="primary" variant="subtle" size="sm">
+                        {{ tag }}
+                      </UBadge>
+                    </dd>
+                  </div>
+
+                  <div class="pt-2 flex justify-between">
+                    <dt class="text-gray-500">Uploaded By</dt>
+                    <dd class="text-gray-900 dark:text-white font-medium">
+                      {{ selectedPub?.creatorName }}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+
+            </div>
+          </template>
+
+          <!-- 2. COMMENTS TAB -->
+          <template #comments="{ item }">
+            <div
+                v-if="authStore.isAdmin || authStore.isResponsavel"
+                class="sticky top-0 bg-white dark:bg-gray-900 z-10 px-4 py-2 border-b border-gray-100 dark:border-gray-800"
+            >
+              <USelectMenu
+                  v-model="commentsFilter"
+                  :items="filterOptions"
+                  option-attribute="label"
+                  placeholder="Filter comments..."
+                  size="sm"
+                  :searchable="false"
+                  @change="refreshComments"
+              />
+            </div>
+            <div class="p-4 space-y-4 max-h-[700px] overflow-y-auto">
+              <div v-if="commentsLoading" class="flex justify-center py-4">
+                <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 animate-spin text-gray-400" />
+              </div>
+
+              <div v-else-if="comments.length === 0" class="text-center text-gray-500 py-8 text-sm">
+                No comments yet.
+              </div>
+
+              <div v-else v-for="comment in comments" :key="comment.id"   class="rounded-lg p-3 relative group transition-colors" :class="comment.hidden ? 'bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50' : 'bg-gray-50 dark:bg-gray-800'">
+                <div v-if="comment.hidden" class="absolute top-2 right-8 flex items-center gap-1">
+                  <span class="text-[10px] font-bold text-red-500 uppercase">Hidden</span>
+                </div>
+                <div v-if="authStore.isAdmin || authStore.isResponsavel" class="absolute top-2 right-2">
+                  <UDropdownMenu
+                      :items="getCommentActions(comment)"
+                      :content="{ align: 'end' }"
+                  >
+                    <UButton
+                        color="gray"
+                        variant="ghost"
+                        icon="i-heroicons-ellipsis-vertical"
+                        size="2xs"
+                        :class="comment.hidden ? 'text-red-400 hover:text-red-600' : 'text-gray-400 hover:text-gray-600'"
+                    />
+                  </UDropdownMenu>
+                </div>
+                <div class="flex items-center gap-2 mb-2">
+                  <UAvatar :alt="comment.name" size="xs" />
+
+                  <div class="flex flex-col">
+                    <span class="font-bold text-sm text-gray-900 dark:text-white leading-none">
+                      {{ comment.name }}
+                    </span>
+                    <span class="text-[10px] text-gray-500 mt-0.5">
+                      {{ new Date(comment.date).toLocaleDateString() }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Comment Text -->
+                <p class="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                  {{ comment.comment }}
+                </p>
+                <div v-if="comment.hidden && comment.motive" class="mt-2 text-[10px] text-red-500 border-t border-red-100 dark:border-red-900/30 pt-1">
+                  <strong>Motive:</strong> {{ comment.motive }}
+                </div>
+              </div>
+            </div>
+          </template>
+        </UTabs>
+
+      </UCard>
+      <UModal v-model:open="isVisibilityModalOpen" title="Update Visibility">
+        <template #content>
+          <UCard>
+            <template #header>
+              <h3 class="font-semibold">
+                {{ commentToToggle?.hidden ? 'Show Comment' : 'Hide Comment' }}
+              </h3>
+            </template>
+
+            <UForm :state="{ motive: visibilityMotive }" @submit="confirmVisibilityChange" class="space-y-4">
+              <p v-if="!commentToToggle?.hidden" class="text-sm text-gray-600 dark:text-gray-300">
+                Please provide a reason for hiding this comment.
+              </p>
+              <p v-else class="text-sm text-gray-600 dark:text-gray-300">
+                Are you sure you want to show this comment again? You can leave the motive empty to clear it.
+              </p>
+
+              <UFormField label="Motive" name="motive" :required="!commentToToggle?.hidden">
+                <UTextarea
+                    v-model="visibilityMotive"
+                    placeholder="e.g. Inappropriate content..."
+                    :rows="2"
+                    autofocus
+                />
+              </UFormField>
+
+              <div class="flex justify-end gap-3 pt-2">
+                <UButton label="Cancel" color="neutral" variant="ghost" @click="isVisibilityModalOpen = false" />
+                <UButton
+                    type="submit"
+                    :label="commentToToggle?.hidden ? 'Show' : 'Hide'"
+                    :color="commentToToggle?.hidden ? 'green' : 'red'"
+                    :loading="visibilityUpdating"
+                />
+              </div>
+            </UForm>
+          </UCard>
+        </template>
+      </UModal>
+    </aside>
   </div>
 </template>
 
-<script setup>
+<script setup >
 const pubStore = usePublicationStore()
+const authStore = useAuthStore()
 const toast = useToast()
 
-definePageMeta({
-  layout: 'default'
-})
+definePageMeta({ layout: 'default' })
 
-// Columns configuration
 const columns = [
-  { accessorKey: 'id', header: '#' },
   { accessorKey: 'fileType', header: 'Type' },
   { accessorKey: 'titulo', header: 'Title' },
   { accessorKey: 'areaCientifica', header: 'Area' },
   { accessorKey: 'tipo', header: 'Category' },
+  { accessorKey: 'ratingAverage', header: 'Rating' },
   { accessorKey: 'creatorName', header: 'Uploader' },
   { accessorKey: 'createdAt', header: 'Date' },
-  { id: 'actions', header: 'Download' }
+  { id: 'actions', header: '' }
 ]
 
 const search = ref('')
@@ -85,14 +362,184 @@ const filteredPublications = computed(() => {
   )
 })
 
-// Guardar o id da publicacao para saber de qual publicacao estamos a fazer download para mostrar o loading em vez do icon de download
+// Side Panel State
+const isPanelOpen = ref(false)
+const selectedPub = ref(null)
+const comments = ref([])
+const commentsLoading = ref(false)
+const ratingUpdating = ref(false)
 const downloadingId = ref(null)
+
+// Local rating state
+const userRatingObj = ref(null)
+const displayRatingAverage = ref(0.0)
+const displayRatingCount = ref(0)
+
+// Visibility Modal State
+const isVisibilityModalOpen = ref(false)
+const visibilityMotive = ref('')
+const commentToToggle = ref(null)
+const visibilityUpdating = ref(false)
+
+// COMMENTS FILTER
+
+
+const filterOptions = ref([
+  { label: 'All Comments', value: null },
+  { label: 'Visible Only', value: false},
+  { label: 'Hidden Only', value: true }
+])
+const commentsFilter = ref(filterOptions[1])
+
+const tabs = [
+  { label: 'Info', slot: 'info' },
+  { label: 'Comments', slot: 'comments' }
+]
+
+const userRatingValue = computed(() => userRatingObj.value ? userRatingObj.value.value : 0)
+const hoverRating = ref(0)
 
 onMounted(() => {
   pubStore.fetchPublications()
 })
 
+const openSidePanel = async (row) => {
+  selectedPub.value = row
+  displayRatingAverage.value = row.ratingAverage || 0.0
+  displayRatingCount.value = row.ratingCount || 0
+  isPanelOpen.value = true
+
+  // Set default filter based on role
+  if (authStore.isAdmin || authStore.isResponsavel) {
+    commentsFilter.value = filterOptions[0]
+  } else {
+    commentsFilter.value = filterOptions[1]
+  }
+
+  await refreshComments()
+
+  try {
+    userRatingObj.value = await pubStore.fetchUserRating(row.id)
+  } catch (e) { /* ignore */ }
+}
+
+const refreshComments = async () => {
+  if (!selectedPub.value) return
+  commentsLoading.value = true
+  comments.value = []
+
+  try {
+    const filterValue = commentsFilter.value ? commentsFilter.value.value : false
+    console.log(filterValue)
+    comments.value = await pubStore.fetchComments(selectedPub.value.id, filterValue)
+  } catch (e) {
+    console.error("Failed to load comments", e)
+  } finally {
+    commentsLoading.value = false
+  }
+}
+
+// --- COMMENT MANAGEMENT ---
+
+const getCommentActions = (comment) => [
+  [{
+    label: comment.hidden ? 'Show Comment' : 'Hide Comment',
+    icon: comment.hidden ? 'i-heroicons-eye' : 'i-heroicons-eye-slash',
+    onSelect: () => {
+      commentToToggle.value = comment
+      visibilityMotive.value = comment.motive || ''
+      isVisibilityModalOpen.value = true
+    }
+  }]
+]
+
+const confirmVisibilityChange = async () => {
+  if (!selectedPub.value || !commentToToggle.value) return
+
+  if (!commentToToggle.value.hidden && !visibilityMotive.value.trim()) {
+    toast.add({ title: 'Motive Required', description: 'Please explain why you are hiding this comment.', color: 'red' })
+    return
+  }
+
+  visibilityUpdating.value = true
+
+  try {
+    const updatedList = await pubStore.toggleCommentVisibility(
+        selectedPub.value.id,
+        commentToToggle.value.id,
+        commentToToggle.value.hidden,
+        visibilityMotive.value,
+        commentsFilter.value
+    )
+    comments.value = updatedList
+
+    const action = commentToToggle.value.hidden ? 'shown' : 'hidden'
+    toast.add({ title: `Comment ${action}`, color: 'green' })
+    isVisibilityModalOpen.value = false
+    if (commentToToggle.value.hidden)
+    {
+      commentsFilter.value = filterOptions[1]
+    }else{
+      commentsFilter.value = filterOptions[2]
+    }
+
+
+  } catch (error) {
+    toast.add({ title: 'Error', description: error.response?.data?.message || 'Failed to update visibility', color: 'red' })
+  } finally {
+    visibilityUpdating.value = false
+  }
+}
+
+// --- RATING LOGIC ---
+
+const handleRate = async (value) => {
+  if (!selectedPub.value) return
+  ratingUpdating.value = true
+
+  try {
+    let result
+    if (userRatingObj.value) {
+      result = await pubStore.updateRating(selectedPub.value.id, userRatingObj.value.id, value)
+      toast.add({ title: 'Rating updated', color: 'green' })
+    } else {
+      result = await pubStore.addRating(selectedPub.value.id, value)
+      toast.add({ title: 'Rating added', color: 'green' })
+    }
+
+    displayRatingAverage.value = result.ratingAverage
+    displayRatingCount.value = result.ratingCount
+    userRatingObj.value = await pubStore.fetchUserRating(selectedPub.value.id)
+    pubStore.fetchPublications()
+
+  } catch (error) {
+    toast.add({ title: 'Error rating', description: error.response?.data?.message, color: 'red' })
+  } finally {
+    ratingUpdating.value = false
+  }
+}
+
+const handleClearRating = async () => {
+  if (!userRatingObj.value) return
+  ratingUpdating.value = true
+
+  try {
+    const result = await pubStore.deleteRating(selectedPub.value.id, userRatingObj.value.id)
+    toast.add({ title: 'Rating removed', color: 'green' })
+
+    displayRatingAverage.value = result.rating_medio_atualizado
+    displayRatingCount.value = result.numero_ratings
+    userRatingObj.value = null
+    pubStore.fetchPublications()
+  } catch (error) {
+    toast.add({ title: 'Error removing rating', color: 'red' })
+  } finally {
+    ratingUpdating.value = false
+  }
+}
+
 const handleDownload = async (pub) => {
+  if (!pub) return
   downloadingId.value = pub.id
   try {
     await pubStore.downloadFile(pub.id, pub.titulo, pub.fileType)

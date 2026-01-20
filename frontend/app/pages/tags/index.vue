@@ -15,12 +15,11 @@
       />
     </div>
 
-    <!-- Data Table (Nuxt UI v3) -->
-    <UCard :ui="{ body: { padding: '' } }">
+    <div class="table-wrapper">
       <UTable
           :data="filteredTags"
           :columns="columns"
-          :loading="tagStore.loading"
+          :loading="tagStore.loading" class="data-table"
       >
         <template #hidden-cell="{ row }">
           <UBadge
@@ -34,24 +33,18 @@
 
         <template #actions-cell="{ row }">
           <div class="flex items-center gap-2">
-            <UButton
-                icon="i-heroicons-pencil-square"
-                size="2xs"
-                color="gray"
-                variant="ghost"
-                @click="openEditModal(row.original)"
-            />
-            <UButton
-                icon="i-heroicons-trash"
-                size="2xs"
-                color="red"
-                variant="ghost"
-                @click="confirmDelete(row.original)"
-            />
+            <UTooltip text="Edit tag">
+              <UButton icon="i-heroicons-pencil-square" size="md" variant="ghost" class="icon-btn"
+                       @click="openEditModal(row.original)"/>
+            </UTooltip>
+            <UTooltip text="Delete tag">
+              <UButton icon="i-heroicons-trash" size="md" variant="ghost" class="icon-btn icon-btn--danger"
+                       @click="confirmDelete(row.original)"/>
+            </UTooltip>
           </div>
         </template>
       </UTable>
-    </UCard>
+    </div>
 
     <!-- Create/Edit Modal -->
     <UModal
