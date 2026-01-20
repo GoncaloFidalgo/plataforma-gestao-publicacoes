@@ -62,9 +62,8 @@ export const usePublicationStore = defineStore('publications', () => {
             tipo: form.tipo,
             area_cientifica: form.areaCientifica,
             descricao: form.descricao,
-            // Convert comma-separated string to array if used, or pass array directly
             autores: Array.isArray(form.autores) ? form.autores : [],
-            tags: form.tags, // Array of tag names
+            tags: form.tags,
             hidden: form.hidden
         }
 
@@ -79,11 +78,37 @@ export const usePublicationStore = defineStore('publications', () => {
         // Refresh list
         await fetchPublications()
     }
+    const fetchComments = async (id, hidden) => apiStore.getPublicationComments(id, hidden)
+    const addRating = async (pubId, value) => {
+        const { data } = await apiStore.addRating(pubId, value)
+        return data
+    }
+
+    const updateRating = async (pubId, ratingId, value) => {
+        const { data } = await apiStore.updateRating(pubId, ratingId, value)
+        return data
+    }
+
+    const deleteRating = async (pubId, ratingId) => {
+        const { data } = await apiStore.deleteRating(pubId, ratingId)
+        return data
+    }
+    const fetchUserRating = async (id) => apiStore.getUserRating(id)
+    const toggleCommentVisibility = async (pubId, commentId, currentHidden, motive, currentFilter) => {
+        const newHidden = !currentHidden
+        await apiStore.updateCommentVisibility(pubId, commentId, newHidden, motive)
+        return await fetchComments(pubId, currentFilter)
+    }
+
+
     return {
         publications,
         loading,
         fetchPublications,
         downloadFile,
-        create
+        create,
+        fetchComments,
+        addRating, updateRating, deleteRating,fetchUserRating,
+        toggleCommentVisibility,
     }
 })

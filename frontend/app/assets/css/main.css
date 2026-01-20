@@ -272,7 +272,6 @@
 .data-table th,
 .data-table td {
   padding: 0.65rem 0.9rem;
-  text-align: left;
   border-bottom: 1px solid rgba(148, 163, 184, 0.35);
 }
 
@@ -389,7 +388,6 @@
 
 /* Ações (ícones alinhados à direita) */
 .actions-cell {
-  text-align: right;
   padding-right: 1rem;
   white-space: nowrap;
 }

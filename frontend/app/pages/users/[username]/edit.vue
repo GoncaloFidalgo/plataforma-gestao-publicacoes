@@ -79,12 +79,12 @@
 import { z } from 'zod'
 import { ref, computed, watchEffect, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useUsersStore } from '~/stores/users.js'
+import { useUserStore } from '~/stores/user.js'
 import { useToast } from '#imports'
 
 const route = useRoute()
 const router = useRouter()
-const usersStore = useUsersStore()
+const usersStore = useUserStore()
 const toast = useToast()
 
 const initialLoading = ref(true)

@@ -8,19 +8,16 @@
       <UButton icon="i-heroicons-plus" color="primary" label="New Area" @click="isModalOpen = true" />
     </div>
 
-    <UCard :ui="{ body: { padding: '' } }">
-      <UTable :data="refStore.areas" :columns="columns" :loading="refStore.loading">
+    <div class="table-wrapper">
+      <UTable :data="refStore.areas" :columns="columns" :loading="refStore.loading" class="data-table">
         <template #actions-cell="{ row }">
-          <UButton
-              icon="i-heroicons-trash"
-              size="2xs"
-              color="red"
-              variant="ghost"
-              @click="handleDelete(row.original)"
-          />
+          <UTooltip text="Delete area">
+            <UButton icon="i-heroicons-trash" size="md" variant="ghost" class="icon-btn icon-btn--danger"
+                     @click="confirmDelete(row.original)"/>
+          </UTooltip>
         </template>
       </UTable>
-    </UCard>
+    </div>
 
     <UModal v-model:open="isModalOpen" title="New Scientific Area">
       <template #content>
@@ -45,6 +42,14 @@
         </UCard>
       </template>
     </UModal>
+
+    <ConfirmDeleteModal
+        v-model="isDeleteModalOpen"
+        type="area"
+        :item-name="itemToDelete?.name"
+        :loading="deleting"
+        @confirm="executeDelete"
+    />
   </div>
 </template>
 
@@ -69,6 +74,7 @@ const saving = ref(false)
 const state = reactive({ name: '' })
 const schema = z.object({ name: z.string().min(1, 'Name is required') })
 
+
 onMounted(() => {
   refStore.fetchAreas()
 })
@@ -86,14 +92,27 @@ const handleSave = async () => {
     saving.value = false
   }
 }
+const isDeleteModalOpen = ref(false)
+const itemToDelete = ref(null)
+const deleting = ref(false)
 
-const handleDelete = async (item) => {
-  if (!confirm(`Delete area "${item.name}"?`)) return
+const confirmDelete = (item) => {
+  itemToDelete.value = item
+  isDeleteModalOpen.value = true
+}
+
+const executeDelete = async () => {
+  if (!itemToDelete.value) return
+  deleting.value = true
   try {
-    await refStore.deleteArea(item.id)
-    toast.add({ title: 'Area deleted', color: 'green' })
+    await refStore.deleteArea(itemToDelete.value.id)
+    toast.add({title: 'Area deleted', color: 'green'})
+    isDeleteModalOpen.value = false
   } catch (error) {
-    toast.add({ title: 'Error', description: 'Cannot delete area in use', color: 'red' })
+    const msg = error.response?.data?.mensagem || 'Cannot delete area in use'
+    toast.add({title: 'Error', description: msg, color: 'red'})
+  } finally {
+    deleting.value = false
   }
 }
 </script>

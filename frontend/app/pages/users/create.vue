@@ -91,10 +91,10 @@
 <script setup>
 import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUsersStore } from '~/stores/users.js'
+import { useUserStore } from '~/stores/user.js'
 
 const router = useRouter()
-const usersStore = useUsersStore()
+const usersStore = useUserStore()
 
 const form = reactive({
   name: '',

@@ -1,4 +1,4 @@
-package app.dtos;
+package app.dtos.publication;
 
 import java.io.Serializable;
 import java.util.List;

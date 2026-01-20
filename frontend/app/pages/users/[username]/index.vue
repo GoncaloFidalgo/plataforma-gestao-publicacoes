@@ -97,10 +97,10 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useUsersStore } from '~/stores/users.js'
+import { useUserStore } from '~/stores/user.js'
 
 const route = useRoute()
-const usersStore = useUsersStore()
+const usersStore = useUserStore()
 
 const username = computed(() => route.params.username)
 

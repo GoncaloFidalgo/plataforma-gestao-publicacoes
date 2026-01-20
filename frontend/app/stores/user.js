@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAPIStore } from '~/stores/api'
 
-export const useUsersStore = defineStore('users', () => {
+export const useUserStore = defineStore('users', () => {
   const apiStore = useAPIStore()
 
   const users = ref([])

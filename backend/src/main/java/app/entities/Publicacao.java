@@ -53,7 +53,7 @@ public class Publicacao implements Serializable {
     private List<Rating> ratings = new ArrayList<>();
 
     @OneToMany(mappedBy = "publicacao", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Comentario> comentarios = new ArrayList<>();
+    private List<Comment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "publicacao", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HistoricoEdicao> historicoEdicoes = new ArrayList<>();
@@ -82,13 +82,13 @@ public class Publicacao implements Serializable {
 
     // Helper methods
 
-    public void addComentario(Comentario comentario) {
-        comentarios.add(comentario);
-        comentario.setPublicacao(this);
+    public void addComentario(Comment comment) {
+        comments.add(comment);
+        comment.setPublicacao(this);
     }
 
-    public void removeCometario(Comentario comentario) {
-        comentarios.remove(comentario);
+    public void removeCometario(Comment comment) {
+        comments.remove(comment);
     }
 
     public void addRating(Rating rating) {
@@ -158,8 +158,8 @@ public class Publicacao implements Serializable {
     public List<Rating> getRatings() { return ratings; }
     public void setRatings(List<Rating> ratings) { this.ratings = ratings; }
 
-    public List<Comentario> getComentarios() { return comentarios; }
-    public void setComentarios(List<Comentario> comentarios) { this.comentarios = comentarios; }
+    public List<Comment> getComentarios() { return comments; }
+    public void setComentarios(List<Comment> comments) { this.comments = comments; }
 
     public List<HistoricoEdicao> getHistoricoEdicoes() { return historicoEdicoes; }
     public void setHistoricoEdicoes(List<HistoricoEdicao> historicoEdicoes) { this.historicoEdicoes = historicoEdicoes; }
