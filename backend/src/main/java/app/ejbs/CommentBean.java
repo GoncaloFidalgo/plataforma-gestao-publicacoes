@@ -99,4 +99,13 @@ public class CommentBean {
         p.getComentarios().remove(comment);
         em.remove(comment);
     }
+
+    public List<Comment> findByUser(String username) throws MyEntityNotFoundException {
+        User user = em.find(User.class, username);
+        if (user == null) throw new MyEntityNotFoundException("User not found");
+
+        return em.createQuery("SELECT c FROM Comment c WHERE c.user.username = :username ORDER BY c.createdAt DESC", Comment.class)
+                .setParameter("username", username)
+                .getResultList();
+    }
 }

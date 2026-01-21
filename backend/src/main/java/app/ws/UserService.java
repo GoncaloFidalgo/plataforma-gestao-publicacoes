@@ -1,20 +1,25 @@
 package app.ws;
 
+import app.dtos.comments.CommentDTO;
 import app.dtos.publication.PublicacaoDTO;
 import app.dtos.UserDTO;
+import app.dtos.rating.UserRatingsResponseDTO;
+import app.ejbs.CommentBean;
 import app.ejbs.PublicacaoBean;
+import app.ejbs.RatingBean;
 import app.ejbs.UserBean;
+import app.entities.Comment;
 import app.entities.Publicacao;
+import app.entities.Rating;
 import app.exceptions.MyConstraintViolationException;
+import app.exceptions.MyEntityNotFoundException;
 import app.security.Authenticated;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.EJB;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.SecurityContext;
 
 import java.util.List;
 
@@ -30,6 +35,12 @@ public class UserService {
 
     @EJB
     private PublicacaoBean publicationBean;
+
+    @EJB
+    private CommentBean commentBean;
+
+    @EJB
+    private RatingBean ratingBean;
 
     //region GET
     @GET
@@ -66,6 +77,39 @@ public class UserService {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"mensagem\": \"Erro ao obter utilizador\"}")
                     .build();
+        }
+    }
+
+    @GET
+    @Path("{username}/comments")
+    @RolesAllowed({"Administrator", "Responsavel"})
+    public Response getUserComments(@PathParam("username") String username) {
+        try {
+            List<Comment> comments = commentBean.findByUser(username);
+            return Response.ok(CommentDTO.from(comments)).build();
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(e.getMessage())
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("{username}/ratings")
+    @RolesAllowed({"Administrator"})
+    public Response getUserRatings(@PathParam("username") String username) {
+        try {
+            List<Rating> ratings = ratingBean.findRatingsWithPublicationsByUser(username);
+            return Response.ok(UserRatingsResponseDTO.from(ratings)).build();
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity("{\"mensagem\": \"" + e.getMessage() + "\"}")
+                .build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("{\"mensagem\": \"Erro ao obter ratings do utilizador\"}")
+                .build();
         }
     }
     //endregion
@@ -135,6 +179,7 @@ public class UserService {
                     .build();
         }
     }
+    //endregion
 
     //region DELETE
     @DELETE

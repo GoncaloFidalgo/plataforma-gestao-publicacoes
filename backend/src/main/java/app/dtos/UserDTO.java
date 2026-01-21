@@ -1,5 +1,6 @@
 package app.dtos;
 
+import app.dtos.publication.PublicacaoDTO;
 import app.entities.User;
 import org.hibernate.Hibernate;
 

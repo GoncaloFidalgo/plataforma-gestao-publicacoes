@@ -10,6 +10,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 
+import java.util.List;
+
 @Stateless
 public class RatingBean {
 
@@ -92,6 +94,7 @@ public class RatingBean {
         // Arredondar a 1 casa decimal
         return Math.round(avg * 10.0) / 10.0;
     }
+
     public Rating findRatingByUser(Long pubId, String username) {
         try {
             return em.createQuery(
@@ -104,8 +107,24 @@ public class RatingBean {
             return null;
         }
     }
+
     public int getCount(Long publicacaoId) {
         Publicacao p = em.find(Publicacao.class, publicacaoId);
         return p != null ? p.getRatings().size() : 0;
+    }
+
+    public List<Rating> findRatingsWithPublicationsByUser(String username) throws MyEntityNotFoundException {
+        User user = em.find(User.class, username);
+        if (user == null) {
+            throw new MyEntityNotFoundException("User not found");
+        }
+
+        List<Rating> ratings = em.createQuery(
+            "SELECT r FROM Rating r JOIN FETCH r.publicacao WHERE r.user.username = :username ORDER BY r.id DESC",
+            Rating.class)
+            .setParameter("username", username)
+            .getResultList();
+
+        return ratings;
     }
 }

@@ -1,10 +1,8 @@
 package app.ejbs;
 
-import app.entities.Administrator;
-import app.entities.Colaborador;
-import app.entities.Responsavel;
-import app.entities.User;
+import app.entities.*;
 import app.exceptions.MyConstraintViolationException;
+import app.exceptions.MyEntityNotFoundException;
 import app.security.Hasher;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
