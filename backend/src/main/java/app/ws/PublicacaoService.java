@@ -1,12 +1,21 @@
 package app.ws;
 
-import app.dtos.PublicacaoCreateDTO;
-import app.dtos.PublicacaoDTO;
+import app.dtos.comments.CommentCreateDTO;
+import app.dtos.comments.CommentDTO;
+import app.dtos.comments.CommentVisibilityDTO;
+import app.dtos.publication.PublicacaoCreateDTO;
+import app.dtos.publication.PublicacaoDTO;
+import app.dtos.rating.RatingRequestDTO;
+import app.dtos.rating.RatingResponseDTO;
+import app.ejbs.CommentBean;
 import app.ejbs.PublicacaoBean;
+import app.ejbs.RatingBean;
 import app.ejbs.UserBean;
+import app.entities.Comment;
 import app.entities.Publicacao;
-import app.entities.User;
+import app.entities.Rating;
 import app.exceptions.MyConstraintViolationException;
+import app.exceptions.MyEntityExistsException;
 import app.exceptions.MyEntityNotFoundException;
 import app.security.Authenticated;
 import jakarta.annotation.security.RolesAllowed;
@@ -16,18 +25,13 @@ import jakarta.ws.rs.core.*;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Path("publications")
@@ -36,16 +40,13 @@ import java.util.stream.Collectors;
 @Authenticated
 public class PublicacaoService {
 
-    @EJB
-    private PublicacaoBean publicacaoBean;
-
-    @EJB
-    private UserBean userBean;
+    @EJB private PublicacaoBean publicacaoBean;
+    @EJB private UserBean userBean;
+    @EJB private RatingBean ratingBean;
+    @EJB private CommentBean commentBean;
 
     @Context
     private SecurityContext securityContext;
-
-    private static final String UPLOAD_DIR = System.getProperty("java.io.tmpdir") + "/publications/";
 
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -73,37 +74,26 @@ public class PublicacaoService {
             InputPart filePart = fileParts.get(0);
 
             String originalName = getFileName(filePart.getHeaders());
-            String extension = "";
-            int i = originalName.lastIndexOf('.');
-            if (i > 0) {
-                extension = originalName.substring(i);
-            }
+            String extension = getExtension(originalName);
+
 
             if (!extension.equalsIgnoreCase(".pdf") && !extension.equalsIgnoreCase(".zip")) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity("File must be PDF or ZIP").build();
             }
 
-            // Guardar ficheiro
-            String storedFileName = UUID.randomUUID().toString() + extension;
-            java.nio.file.Path path = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(path)) {
-                Files.createDirectories(path);
-            }
-
-            InputStream inputStream = filePart.getBody(InputStream.class, null);
-            Files.copy(inputStream, path.resolve(storedFileName), StandardCopyOption.REPLACE_EXISTING);
-
             // Criar a publicação na BD
+            InputStream inputStream = filePart.getBody(InputStream.class, null);
             String creatorUsername = securityContext.getUserPrincipal().getName();
 
             Publicacao publicacao = publicacaoBean.create(
                     createDTO.getTitulo(),
-                    createDTO.getTipo(),
+                    createDTO.getTipoId(),
                     createDTO.getAutores(),
-                    createDTO.getArea_cientifica(),
+                    createDTO.getAreaId(),
                     createDTO.getDescricao(),
-                    storedFileName,
+                    inputStream,
+                    extension,
                     createDTO.getTags(),
                     creatorUsername
             );
@@ -133,26 +123,23 @@ public class PublicacaoService {
     public Response download(@PathParam("id") Long id) {
         Publicacao publicacao = publicacaoBean.find(id);
 
-        if (publicacao == null || publicacao.getFile() == null) {
+        if (publicacao == null || publicacao.getFilename() == null) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("Publication or file not found")
                     .build();
         }
 
-        java.nio.file.Path filePath = Paths.get(UPLOAD_DIR, publicacao.getFile());
-        File file = filePath.toFile();
+        File file = publicacaoBean.getFile(id);
 
-        if (!file.exists()) {
+        if (file == null || !file.exists()) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("File not found on server")
-                    .build();
+                    .entity("File not found on server").build();
         }
 
-        String extension = getExtension(publicacao.getFile());
+        String extension = getExtension(publicacao.getFilename());
         String sanitizedTitle = publicacao.getTitulo().replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
         String downloadName = sanitizedTitle + extension;
 
-        // Ver se é pdf ou zip
         String contentType = MediaType.APPLICATION_OCTET_STREAM;
         if (extension.equalsIgnoreCase(".pdf")) {
             contentType = "application/pdf";
@@ -201,14 +188,70 @@ public class PublicacaoService {
 
     @GET
     @Path("{id}/comments")
-    public Response getComentarios(@PathParam("id") Long id) {
-        Publicacao p = publicacaoBean.find(id);
-        if (p == null) return Response.status(Response.Status.NOT_FOUND).build();
+    public Response getAllComments(@PathParam("id") Long id, @QueryParam("hidden") Boolean hidden) {
+        List<Comment> comments = commentBean.findAll(id, hidden);
+        return Response.ok(CommentDTO.from(comments)).build();
+    }
+    @POST
+    @Path("{id}/comments")
+    public Response createComment(@PathParam("id") Long id, CommentCreateDTO dto) {
+        try {
+            String username = securityContext.getUserPrincipal().getName();
+            Comment comment = commentBean.create(id, username, dto.getComment());
 
-        List<PublicacaoDTO.ComentarioDTO> comments = p.getComentarios().stream()
-                .map(PublicacaoDTO.ComentarioDTO::from)
-                .collect(Collectors.toList());
-        return Response.ok(comments).build();
+            return Response.status(Response.Status.CREATED)
+                    .entity(CommentDTO.from(comment))
+                    .build();
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        }
+    }
+
+    @PATCH
+    @Path("{id}/comments/{commentId}")
+    public Response updateComment(@PathParam("id") Long id, @PathParam("commentId") Long commentId, CommentCreateDTO dto) {
+        try {
+            String username = securityContext.getUserPrincipal().getName();
+            Comment comment = commentBean.update(id, commentId, dto.getComment(), username);
+
+            return Response.ok(CommentDTO.from(comment)).build();
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (SecurityException e) {
+            return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        }
+    }
+
+    @PATCH
+    @Path("{id}/comments/{commentId}/visibility")
+    @RolesAllowed({"Administrator", "Responsavel"})
+    public Response updateCommentVisibility(@PathParam("id") Long id, @PathParam("commentId") Long commentId, CommentVisibilityDTO dto) {
+        try {
+            commentBean.updateVisibility(id, commentId, dto.getHidden(), dto.getMotive());
+            return Response.ok("{\"mensagem\": \"Visibilidade do comentário atualizada com sucesso\"}").build();
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        }
+    }
+
+    @DELETE
+    @Path("{id}/comments/{commentId}")
+    public Response deleteComment(@PathParam("id") Long id, @PathParam("commentId") Long commentId) {
+        try {
+            String username = securityContext.getUserPrincipal().getName();
+            commentBean.delete(id, commentId, username);
+            return Response.ok("{\"mensagem\": \"Comentário removido com sucesso\"}").build();
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (SecurityException e) {
+            return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        }
     }
 
     @GET
@@ -294,7 +337,103 @@ public class PublicacaoService {
         }
     }*/
 
+   @GET
+   @Path("{id}/ratings")
+   public Response getRatings(@PathParam("id") Long id) {
+       Publicacao p = publicacaoBean.find(id);
+       if (p == null) return Response.status(Response.Status.NOT_FOUND).build();
 
+       List<PublicacaoDTO.RatingDTO> ratings = p.getRatings().stream()
+               .map(PublicacaoDTO.RatingDTO::from)
+               .collect(Collectors.toList());
+       return Response.ok(ratings).build();
+   }
+
+   @POST
+   @Path("{id}/ratings")
+   @RolesAllowed({"Colaborador", "Responsavel", "Administrator"})
+   public Response addRating(@PathParam("id") Long id, RatingRequestDTO dto) {
+       try {
+           String username = securityContext.getUserPrincipal().getName();
+
+           // Validar input (1-5)
+           if (dto.getRating() < 1 || dto.getRating() > 5) {
+               return Response.status(Response.Status.BAD_REQUEST).entity("Rating deve ser entre 1 e 5").build();
+           }
+
+           double newAverage = ratingBean.create(id, username, dto.getRating());
+           int count = ratingBean.getCount(id);
+
+           return Response.status(Response.Status.CREATED)
+                   .entity(new RatingResponseDTO(newAverage, count))
+                   .build();
+
+       } catch (MyEntityExistsException e) {
+           return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
+       } catch (MyEntityNotFoundException e) {
+           return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+       }
+   }
+
+    // EP48 - Atualizar Rating (PATCH)
+    @PATCH
+    @Path("{id}/ratings/{ratingId}")
+    @RolesAllowed({"Colaborador", "Responsavel", "Administrator"})
+    public Response updateRating(@PathParam("id") Long id, @PathParam("ratingId") Long ratingId, RatingRequestDTO dto) {
+        try {
+            String username = securityContext.getUserPrincipal().getName();
+
+            if (dto.getRating() < 1 || dto.getRating() > 5) {
+                return Response.status(Response.Status.BAD_REQUEST).entity("Rating deve ser entre 1 e 5").build();
+            }
+
+            double newAverage = ratingBean.update(id, ratingId, dto.getRating(), username);
+            int count = ratingBean.getCount(id);
+
+            return Response.ok()
+                    .entity(new RatingResponseDTO(newAverage, count))
+                    .build();
+
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (SecurityException e) {
+            return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        }
+    }
+
+    // EP49 - Remover Rating (DELETE)
+    @DELETE
+    @Path("{id}/ratings/{ratingId}")
+    @RolesAllowed({"Colaborador", "Responsavel", "Administrator"})
+    public Response removeRating(@PathParam("id") Long id, @PathParam("ratingId") Long ratingId) {
+        try {
+            double newAverage = ratingBean.delete(id, ratingId);
+            int count = ratingBean.getCount(id);
+
+            return Response.ok()
+                    .entity(new RatingResponseDTO(newAverage, count))
+                    .build();
+
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (SecurityException e) {
+            return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
+        }
+    }
+    @GET
+    @Path("{id}/ratings/me")
+    public Response getMyRating(@PathParam("id") Long id) {
+        String username = securityContext.getUserPrincipal().getName();
+        Rating rating = ratingBean.findRatingByUser(id, username);
+
+        if (rating == null) {
+            return Response.noContent().build();
+        }
+
+        return Response.ok(PublicacaoDTO.RatingDTO.from(rating)).build();
+    }
     private String getFileName(MultivaluedMap<String, String> header) {
         String[] contentDisposition = header.getFirst("Content-Disposition").split(";");
         for (String filename : contentDisposition) {

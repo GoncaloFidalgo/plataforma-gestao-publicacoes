@@ -1,32 +1,40 @@
 package app.ws;
 
-import app.dtos.AdministratorDTO;
+import app.dtos.publication.PublicacaoDTO;
 import app.dtos.UserDTO;
+import app.ejbs.PublicacaoBean;
 import app.ejbs.UserBean;
+import app.entities.Publicacao;
 import app.exceptions.MyConstraintViolationException;
 import app.security.Authenticated;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.EJB;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 
 import java.util.List;
+
 
 @Path("users")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Authenticated
-@RolesAllowed({"Administrator"})
 public class UserService {
 
     @EJB
     private UserBean userBean;
 
+    @EJB
+    private PublicacaoBean publicationBean;
+
     //region GET
     @GET
     @Path("/")
+    @RolesAllowed({"Administrator"})
     public Response getAllUsers() {
         try {
             var users = userBean.findAll();
@@ -41,6 +49,7 @@ public class UserService {
 
     @GET
     @Path("/{username}")
+    @RolesAllowed({"Administrator"})
     public Response getUser(@PathParam("username") String username) {
         try {
             var user = userBean.find(username);
@@ -64,6 +73,7 @@ public class UserService {
     //region POST
     @POST
     @Path("/")
+    @RolesAllowed({"Administrator"})
     public Response createUser(@Valid UserDTO dto) {
         try {
             var user = userBean.createUser(
@@ -93,6 +103,7 @@ public class UserService {
     //region PUT
     @PUT
     @Path("/{username}")
+    @RolesAllowed({"Administrator"})
     public Response updateUser(@PathParam("username") String username, @Valid UserDTO dto) {
         try {
             var user = userBean.find(username);
@@ -124,11 +135,11 @@ public class UserService {
                     .build();
         }
     }
-    //endregion
 
     //region DELETE
     @DELETE
     @Path("/{username}")
+    @RolesAllowed({"Administrator"})
     public Response deleteUser(@PathParam("username") String username) {
         try {
             userBean.deleteUser(username);
@@ -146,6 +157,7 @@ public class UserService {
     //region PATCH
     @PATCH
     @Path("/{username}/status")
+    @RolesAllowed({"Administrator"})
     public Response updateUserStatus(@PathParam("username") String username, java.util.Map<String, Object> statusUpdate) {
         try {
             Boolean active = (Boolean) statusUpdate.get("active");
@@ -172,6 +184,7 @@ public class UserService {
 
     @PATCH
     @Path("/{username}/role")
+    @RolesAllowed({"Administrator"})
     public Response updateUserRole(@PathParam("username") String username, java.util.Map<String, Object> roleUpdate) {
         try {
             Integer role = null;
@@ -205,5 +218,26 @@ public class UserService {
         }
     }
     //endregion
+    @GET
+    @Path("/{username}/publications")
+    @RolesAllowed({"Administrator"})
+    public Response getMyPublications(@PathParam("username") String username) {
+        try {
+            // Vai buscar as publicações onde o user é creator
+            List<Publicacao> pubs = publicationBean.findPublicationsForUser(username);
+
+            List<PublicacaoDTO> dto = pubs.stream()
+                    .map(PublicacaoDTO::from)
+                    .toList();
+
+            return Response.ok(dto).build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"mensagem\":\"Erro ao obter publicações pessoais\"}")
+                    .build();
+        }
+    }
 
 }

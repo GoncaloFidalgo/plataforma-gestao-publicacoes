@@ -1,22 +1,12 @@
-### LOGIN - Get JWT Token (Use this first!)
-POST http://localhost:8080/academics/api/auth/login
-Content-Type: application/json
-Accept: application/json
 
-{
-  "username": "admin",
-  "password": "123"
-}
 ### Get All administrators
 GET http://localhost:8080/academics/api/administrators
 Accept: application/json
 
-
-
 ### SET NEW PASSWORD
 PATCH http://localhost:8080/academics/api/auth/set-password
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NTk5MzYyMywiZXhwIjoxNzY1OTk3MjIzfQ.sjKL_mzYJP_nzLPXerCEmCvyulcXN6o5JukGEUlxgsSJ47x6JV2DdD0AUMusJ0vB
+Authorization: Bearer {{auth_token}}
 
 {
   "oldPassword": "123",
@@ -30,7 +20,7 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "email": "banana@example.com"
+  "email": "admin@e.com"
 }
 
 ### RESET PASSWORD
@@ -45,7 +35,7 @@ Content-Type: application/json
 ### Create User (Administrator only)
 POST http://localhost:8080/academics/api/users
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
+Authorization: Bearer {{auth_token}}
 
 
 {
@@ -61,7 +51,7 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2O
 ### Update User (Administrator only)
 PUT http://localhost:8080/academics/api/users/joao
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzU1MzM4NywiZXhwIjoxNzY3NTU2OTg3fQ.KPW4PBBdMqnnihkUrCj1N2NKVvvY-mM0motn-2YUoMLAlU-tEF36vA-cswc1xlmN
+Authorization: Bearer {{auth_token}}
 
 
 {
@@ -70,19 +60,31 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzU1M
   "active": false
 }
 
+### Update User
+PUT http://localhost:8080/academics/api/users/me
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+
+{
+  "name": "joao",
+  "email": "joao.silva@gmail.com"
+}
+
+
 ### Get Users
 GET http://localhost:8080/academics/api/users
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1MjMzNCwiZXhwIjoxNzY3NDU1OTM0fQ.qvflgzxJ-iMRjUgFOx_s4qOSIfRRP5vV0ZsRvTTCyQb40JuMvcWNhEipVoivubqO
+Authorization: Bearer {{auth_token}}
 
 ### Delete User (Administrator only)
 DELETE http://localhost:8080/academics/api/users/joao
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ1MjMzNCwiZXhwIjoxNzY3NDU1OTM0fQ.qvflgzxJ-iMRjUgFOx_s4qOSIfRRP5vV0ZsRvTTCyQb40JuMvcWNhEipVoivubqO
+Authorization: Bearer {{auth_token}}
 
 ### Suspend User (Administrator only)
 PATCH http://localhost:8080/academics/api/users/joao/status
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
+Authorization: Bearer {{auth_token}}
 
 {
   "active": false,
@@ -92,7 +94,7 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2O
 ### Activate User (Administrator only)
 PATCH http://localhost:8080/academics/api/users/joao/status
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
+Authorization: Bearer {{auth_token}}
 
 {
   "active": true
@@ -101,8 +103,7 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2O
 ### Update User Role (Administrator only)
 PATCH http://localhost:8080/academics/api/users/joao/role
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
-
+Authorization: Bearer {{auth_token}}
 
 {
   "role": 2
@@ -111,13 +112,19 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2O
 ### Get All Users (Administrator only)
 GET http://localhost:8080/academics/api/users
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
-Authorization: Bearer <eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbjEiLCJpYXQiOjE3NjIzOTM0MDYsImV4cCI6MTc2MjM5NzAwNn0.TgbasV_mzErHD_aIUfdKwR-wJ3_XMI0lCzIlhNjkBhglHC-h5xjr8n0yQoWmzg3z>
+Authorization: Bearer {{auth_token}}
+
 
 ### Get User by Username (Administrator only)
 GET http://localhost:8080/academics/api/users/joao
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzQ2ODQyNiwiZXhwIjoxNzY3NDcyMDI2fQ.GxQYzAxheSfSH7pYhJG7I77cgLxPt9la3jDEGc8sG4-qIIlHu-lnTy-Xi0I0ynss
+Authorization: Bearer {{auth_token}}
+
+### Get User's Publication by Username (Administrator only)
+GET http://localhost:8080/academics/api/users/colab/publications
+Accept: application/json
+Authorization: Bearer {{auth_token}}
+
 
 
 

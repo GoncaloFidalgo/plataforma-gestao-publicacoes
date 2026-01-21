@@ -9,8 +9,10 @@ import app.security.Hasher;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.validation.ConstraintViolationException;
+import org.hibernate.Hibernate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -102,11 +104,9 @@ public class UserBean {
         );
 
         emailBean.send(email, subject, text);
-
     }
 
     public void resetPassword(String token, String newPassword) {
-
         // Validar formato do token
         try {
             java.util.UUID.fromString(token);
@@ -131,28 +131,6 @@ public class UserBean {
         user.setResetTokenExpiry(null);
     }
 
-  /*  public void updateUser(String username, String newUsername, String email, Boolean active) {
-        User user = entityManager.find(User.class, username);
-        if (user == null) {
-            throw new IllegalArgumentException("User " + username + " not found");
-        }
-        entityManager.lock(user, jakarta.persistence.LockModeType.OPTIMISTIC);
-
-        if (newUsername != null && !newUsername.isBlank() && !newUsername.equals(username)) {
-            if (entityManager.find(User.class, newUsername) != null) {
-                throw new IllegalArgumentException("Username " + newUsername + " already exists");
-            }
-            user.setUsername(newUsername);
-        }
-
-        if (email != null) {
-            user.setEmail(email);
-        }
-
-        if (active != null) {
-            user.setActive(active);
-        }
-    }*/
 
     public void updateUser(String username, String newName, String email, Boolean active) {
         User user = entityManager.find(User.class, username);
@@ -161,7 +139,7 @@ public class UserBean {
         }
         entityManager.lock(user, jakarta.persistence.LockModeType.OPTIMISTIC);
 
-        if (email != null) {
+        if (newName != null) {
             user.setName(newName);
         }
 
@@ -171,6 +149,22 @@ public class UserBean {
 
         if (active != null) {
             user.setActive(active);
+        }
+    }
+
+    public void updatePersonalData(String username, String newName, String email) {
+        User user = entityManager.find(User.class, username);
+        if (user == null) {
+            throw new IllegalArgumentException("User " + username + " not found");
+        }
+        entityManager.lock(user, jakarta.persistence.LockModeType.OPTIMISTIC);
+
+        if (newName != null) {
+            user.setName(newName);
+        }
+
+        if (email != null) {
+            user.setEmail(email);
         }
     }
 
@@ -187,16 +181,13 @@ public class UserBean {
         if (user == null) {
             throw new RuntimeException("Utilizador não encontrado");
         }
-
         user.setActive(active);
-        // Note: The motive is received but not stored in the current User entity
-        // You may want to add a field to store suspension reasons if needed
     }
 
     public void updateUserRole(String username, Integer role) {
         User user = entityManager.find(User.class, username);
         if (user == null) {
-            throw new RuntimeException("Utilizador não encontrado");
+            throw new EntityNotFoundException("Utilizador não encontrado");
         }
 
         // Validate role
@@ -204,8 +195,7 @@ public class UserBean {
             throw new IllegalArgumentException("Role inválida. Deve ser 1 (Administrator), 2 (Responsavel) ou 3 (Colaborador)");
         }
 
-        // Cannot change role by simple update - need to create new entity with correct type
-        String currentType = org.hibernate.Hibernate.getClass(user).getSimpleName();
+        String currentType = Hibernate.getClass(user).getSimpleName();
         String targetType = switch (role) {
             case 1 -> "Administrator";
             case 2 -> "Responsavel";
@@ -213,41 +203,32 @@ public class UserBean {
             default -> throw new IllegalArgumentException("Role inválida");
         };
 
-        // If same type, no change needed
         if (currentType.equals(targetType)) {
             return;
         }
 
-        // Store current data
-        String username2 = user.getUsername();
-        String password = user.getPassword();
-        String name = user.getName();
-        String email = user.getEmail();
-        Boolean active = user.getActive();
-
-        // Remove old entity
-        entityManager.remove(user);
         entityManager.flush();
-
-        // Create new entity with correct type
-        User newUser = switch (role) {
-            case 1 -> new Administrator(username2, password, name, email);
-            case 2 -> new Responsavel(username2, password, name, email);
-            case 3 -> new Colaborador(username2, password, name, email);
-            default -> throw new IllegalArgumentException("Role inválida");
-        };
-
-        newUser.setActive(active);
-        entityManager.persist(newUser);
+        // Remove o objeto da cache do Hibernate para não haver problemas com a versão antiga do user depois de atualizar a role.
+        entityManager.detach(user);
+        entityManager.createNativeQuery("UPDATE users SET DTYPE = ? WHERE username = ?")
+                .setParameter(1, targetType)
+                .setParameter(2, username)
+                .executeUpdate();
     }
 
     public List<User> findAll() {
-        return entityManager.createQuery("SELECT u FROM User u ORDER BY u.name", User.class)
-                .getResultList();
+        return entityManager.createNamedQuery("getAllUsers", User.class).getResultList();
     }
 
+    public List<Administrator> findAllAdministrators() {
+        return entityManager.createNamedQuery("getAllAdministrators", Administrator.class).getResultList();
+    }
 
+    public List<Responsavel> findAllResponsaveis() {
+        return entityManager.createNamedQuery("getAllResponsaveis", Responsavel.class).getResultList();
+    }
 
-
-
+    public List<Colaborador> findAllColaboradores() {
+        return entityManager.createNamedQuery("getAllColaboradores", Colaborador.class).getResultList();
+    }
 }

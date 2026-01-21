@@ -1,4 +1,4 @@
-import {defineStore} from 'pinia'
+import { defineStore } from 'pinia'
 import axios from 'axios'
 
 export const useAPIStore = defineStore('api', () => {
@@ -9,111 +9,250 @@ export const useAPIStore = defineStore('api', () => {
         maxAge: 60 * 60 * 24 * 7 // 1 week
     })
 
+    //#region Auth
+    const postLogin = async (credentials) => {
+        const { data } = await axios.post(`${API_BASE_URL}/auth/login`, credentials)
+        token.value = data
+    }
     // Para meter o header de autorização nos pedidos autenticados
     const authHeader = () => {
-        return token.value ? {Authorization: `Bearer ${token.value}`} : {}
+        return token.value ? { Authorization: `Bearer ${token.value}` } : null
+    }
+    //#endregion
+
+    //#region User
+    const getAuthUser = async () => {
+        const headers = authHeader()
+        if (!headers) return null
+
+        const { data } = await axios.get(`${API_BASE_URL}/auth/user`, { headers })
+        return data
+    }
+    const createUser = async (payload) => {
+        const headers = authHeader()
+        if (!headers) return null
+
+        const { data } = await axios.post(`${API_BASE_URL}/users`, payload, { headers })
+    }
+    const updateUser = async (id, payload) => {
+        const headers = authHeader()
+        if (!headers) return null
+        const { data } = await axios.put(`${API_BASE_URL}/users/${id}`, payload, {
+            headers
+        })
+        return data
+    }
+    const deleteUserApi = async (id) => {
+        const headers = authHeader()
+        if (!headers) return null
+        return axios.delete(`${API_BASE_URL}/users/${id}`, { headers })
+    }
+    const getUsers = async () => {
+        const headers = authHeader()
+        if (!headers) return null
+        const { data } = await axios.get(`${API_BASE_URL}/users`, {
+            headers
+        })
+        return data
+    }
+    const setUserRole = async (id, payload) => {
+        const headers = authHeader()
+        if (!headers) return null
+        const { data } = await axios.patch(`${API_BASE_URL}/users/${id}/role`, payload, {
+            headers
+        })
+        return data
+    }
+
+    const getMyPublications = async () => {
+        const headers = authHeader()
+        if (!headers) return null
+        const { data } = await axios.get(`${API_BASE_URL}/users/me/publications`, {
+            headers
+        })
+        return data // array de publications
+    }
+
+    const recoverPassword = async (email) => {
+        const { data } = await axios.post(
+            `${API_BASE_URL}/auth/recover-password`,
+            { email }
+        )
+        return data // { mensagem: "..." }
+    }
+
+    const resetPassword = async (payload) => {
+        // payload: { token, nova_password }  (ou camelCase se o backend exigir)
+        const { data } = await axios.put(
+            `${API_BASE_URL}/auth/reset-password`,
+            payload
+        )
+        return data // { mensagem: "..." }
+    }
+
+    const updateMe = async (payload) => {
+        const headers = authHeader()
+        if (!headers) return null
+        const { data } = await axios.put(
+            `${API_BASE_URL}/users/me`,
+            payload, {
+            headers
+        })
+        return data
     }
 
     const changePassword = async (payload) => {
-        // payload: { oldpassword, newpassword, confirmPassword }
-        const {data} = await axios.patch(
-            `${API_BASE_URL}/auth/set-password`,
-            payload,
-            {headers: authHeader()}
-        )
-
-        console.log('🟢 PUT /auth/set-password response:', data)
-
-        return data   // { mensagem: "Palavra-passe alterada com sucesso" }
-    }
-    const createUser = async (payload) => {
-        const {data} = await axios.post(
-            `${API_BASE_URL}/users`,
-            payload,
-            {headers: authHeader()}
-        )
-    }
-    // AUTH
-
-    const postLogin = async (credentials) => {
-        console.log('🔵 POST /auth/login sending:', credentials)
-
-        const {data} = await axios.post(
-            `${API_BASE_URL}/auth/login`,
-            credentials
-        )
-
-        console.log('🟢 POST /auth/login response:', data) // <== data é a string JWT
-
-        // 👇 guarda diretamente a string
-        token.value = data
-
+        const headers = authHeader()
+        if (!headers) return null
+        const { data } = await axios.patch(`${API_BASE_URL}/auth/set-password`, payload, {
+            headers
+        })
         return data
+        // { mensagem: "Palavra-passe alterada com sucesso" }
     }
-
-    const refreshToken = async () => {
-        const {data} = await axios.post(
-            `${API_BASE_URL}/auth/refresh-token`,
-            {token: token.value},
-            {headers: authHeader()} // normalmente nem é preciso, mas não atrapalha
-        )
-
-        const newToken = typeof data === 'string' ? data : data.token
-
-        token.value = newToken
-
-        console.log('🟢 Token refreshed:', newToken)
-
-        return newToken
-    }
-
-    const setUserRole = async (id, payload) => {
-        const {data} = await axios.patch(`${API_BASE_URL}/users/${id}/role`, payload, {headers: authHeader()})
-        return data
-    }
-
-    const updateUser = async (id, payload) => {
-        const {data} = await axios.put(`${API_BASE_URL}/users/${id}`, payload, {headers: authHeader()})
-        console.log("payload", payload)
-        return data
-    }
-
-    const deleteUserApi = async (id) => {
-        return axios.delete(`${API_BASE_URL}/users/${id}`, {headers: authHeader()})
-    }
-
-
     const setUserStatus = async (id, payload) => {
-        const {data} = await axios.patch(`${API_BASE_URL}/users/${id}/status`, payload, {headers: authHeader()})
+        const headers = authHeader()
+        if (!headers) return null
+        const { data } = await axios.patch(`${API_BASE_URL}/users/${id}/status`, payload, {
+            headers
+        })
         return data
     }
-    const getAuthUser = async () => {
-        const {data} = await axios.get(
-            `${API_BASE_URL}/auth/user`,
-            {headers: authHeader()}
+    //#endregion
+
+    //#region Publications
+    const getPublications = async () => {
+        const headers = authHeader()
+        if (!headers) return []
+        const { data } = await axios.get(`${API_BASE_URL}/publications`, { headers })
+        return data
+    }
+
+    const getPublicationsByUser = async (username) => {
+        const headers = authHeader()
+        if (!headers) return []
+
+        const { data } = await axios.get(
+            `${API_BASE_URL}/users/${username}/publications`,
+            { headers }
         )
-
-        console.log('🟢 GET /auth/user response:', data)
-
         return data
+    
     }
 
-    const getUsers = async () => {
-        const config = useRuntimeConfig()
-        const API_BASE_URL = config.public.apiBase
 
-        const token = useCookie('auth_token')
-        const headers = token.value
-            ? {Authorization: `Bearer ${token.value}`}
-            : {}
+    const createPublication = (formData) => {
+        const headers = authHeader()
+        if (!headers) throw new Error("No token")
 
-        const {data} = await axios.get(`${API_BASE_URL}/users`, {headers})
-
-        console.log('🟢 GET /users response:', data)
-
-        return data  // array de utilizadores
+        // Axios mete 'Content-Type': 'multipart/form-data' quando deteta um FormData
+        return axios.post(`${API_BASE_URL}/publications`, formData, { headers })
     }
 
+    const downloadPublication = (id) => {
+        const headers = authHeader()
+        if (!headers) throw new Error("No token")
+
+        return axios.get(`${API_BASE_URL}/publications/${id}/ficheiro`, {
+            headers,
+            responseType: 'blob'
+        })
+    }
+
+    const getPublicationComments = (id, hidden) => {
+        const headers = authHeader()
+        if (!headers) return []
+
+        const params = {}
+        if (hidden === true || hidden === false) {
+            params.hidden = hidden
+        }
+
+        return axios.get(`${API_BASE_URL}/publications/${id}/comments`, { headers, params }).then(r => r.data)
+    }
+
+
+    //#endregion
+    // --- REFERENCE DATA (Types & Areas) ---
+
+    // TYPES
+    const getTypes = () => {
+        const headers = authHeader()
+        if (!headers) return []
+        return axios.get(`${API_BASE_URL}/references/types`, { headers }).then(r => r.data)
+    }
+
+    const createType = (data) => {
+        const headers = authHeader()
+        return axios.post(`${API_BASE_URL}/references/types`, data, { headers })
+    }
+
+    const deleteType = (id) => {
+        const headers = authHeader()
+        return axios.delete(`${API_BASE_URL}/references/types/${id}`, { headers })
+    }
+
+    // AREAS
+    const getAreas = () => {
+        const headers = authHeader()
+        if (!headers) return []
+        return axios.get(`${API_BASE_URL}/references/areas`, { headers }).then(r => r.data)
+    }
+
+    const createArea = (data) => {
+        const headers = authHeader()
+        return axios.post(`${API_BASE_URL}/references/areas`, data, { headers })
+    }
+
+    const deleteArea = (id) => {
+        const headers = authHeader()
+        return axios.delete(`${API_BASE_URL}/references/areas/${id}`, { headers })
+    }
+
+// RATINGS
+    const addRating = (pubId, rating) => {
+        const headers = authHeader()
+        // Send as { rating: 5 }
+        return axios.post(`${API_BASE_URL}/publications/${pubId}/ratings`, { rating }, { headers })
+    }
+
+    const updateRating = (pubId, ratingId, rating) => {
+        const headers = authHeader()
+        return axios.patch(`${API_BASE_URL}/publications/${pubId}/ratings/${ratingId}`, { rating }, { headers })
+    }
+
+    const deleteRating = (pubId, ratingId) => {
+        const headers = authHeader()
+        return axios.delete(`${API_BASE_URL}/publications/${pubId}/ratings/${ratingId}`, { headers })
+    }
+    const getUserRating = (id) => {
+        const headers = authHeader()
+        if (!headers) return null
+        return axios.get(`${API_BASE_URL}/publications/${id}/ratings/me`, { headers }).then(r => r.data || null)
+    }
+
+    const updateCommentVisibility = (pubId, commentId, hidden, motive) => {
+        const headers = authHeader()
+        return axios.patch(
+            `${API_BASE_URL}/publications/${pubId}/comments/${commentId}/visibility`,
+            { hidden, motive },
+            { headers }
+        )
+    }
+    const createComment = (pubId, data) => {
+        const headers = authHeader()
+        return axios.post(`${API_BASE_URL}/publications/${pubId}/comments`, data, { headers })
+    }
+
+    const updateComment = (pubId, commentId, data) => {
+        const headers = authHeader()
+        return axios.patch(`${API_BASE_URL}/publications/${pubId}/comments/${commentId}`, data, { headers })
+    }
+
+    const deleteComment = (pubId, commentId) => {
+        const headers = authHeader()
+        return axios.delete(`${API_BASE_URL}/publications/${pubId}/comments/${commentId}`, { headers })
+    }
     return {
         token,
         postLogin,
@@ -124,6 +263,20 @@ export const useAPIStore = defineStore('api', () => {
         deleteUser: deleteUserApi,
         setUserStatus,
         setUserRole,
-        changePassword
+        changePassword,
+        getPublications,
+        downloadPublication,
+        recoverPassword,
+        resetPassword,
+        getMyPublications,
+        getPublicationsByUser,
+        updateMe,
+        getTypes, createType, deleteType,
+        getAreas, createArea, deleteArea,
+        getPublicationComments,
+        addRating, updateRating, deleteRating,
+        getUserRating,
+        updateCommentVisibility,
+        createComment,updateComment, deleteComment,
     }
 })

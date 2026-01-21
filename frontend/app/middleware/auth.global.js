@@ -6,20 +6,20 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     const apiStore = useAPIStore()
 
     // 1. Hydration Check:
-    // If we have a Token (cookie) but no User (memory), fetch the user.
-    // We use 'await' so the page does NOT load until this finishes.
+    // Se houver token mas não houver user, vai se buscar o
     if (apiStore.token && !authStore.currentUser) {
-        await authStore.getUser()
+        // Usar await para a esperar até ter os dados do user, ou seja, a página nao carrega até obter os dados e continuar a execução.
+        await authStore.authUser()
     }
 
     // 2. Protected Routes Logic:
-    // If user is NOT logged in and tries to go strictly anywhere BUT login
-    if (!authStore.isLoggedIn && to.path !== '/login') {
+    // Proteger contra users sem autenticação a tentar aceder a qualquer rota que não seja login
+    if (!authStore.isLoggedIn && !to.path.startsWith('/login')) {
         return navigateTo('/login')
     }
 
     // 3. Redirect Loop Prevention:
-    // If user IS logged in and tries to go to login, send them to dashboard/home
+    // Se o user já tiver login e tentar fazer login, enviar para a homepage
     if (authStore.isLoggedIn && to.path === '/login') {
         return navigateTo('/')
     }

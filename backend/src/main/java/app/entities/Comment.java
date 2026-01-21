@@ -1,0 +1,66 @@
+package app.entities;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "comments")
+public class Comment implements Serializable {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank
+    @Column(columnDefinition = "TEXT")
+    private String text;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    private boolean hidden = false;
+    private String motive;
+
+    @ManyToOne
+    @JoinColumn(name = "user_username", nullable = false)
+    private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "publicacao_id", nullable = false)
+    private Publicacao publicacao;
+
+    public Comment() {}
+
+    public Comment(String text, User user, Publicacao publicacao) {
+        this.text = text;
+        this.user = user;
+        this.publicacao = publicacao;
+        this.createdAt = LocalDateTime.now();
+        this.hidden = false;
+    }
+
+
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getText() { return text; }
+    public void setText(String text) { this.text = text; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public boolean isHidden() { return hidden; }
+    public void setHidden(boolean hidden) { this.hidden = hidden; }
+
+    public String getMotive() { return motive; }
+    public void setMotive(String motive) { this.motive = motive; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+
+    public Publicacao getPublicacao() { return publicacao; }
+    public void setPublicacao(Publicacao publicacao) { this.publicacao = publicacao; }
+}

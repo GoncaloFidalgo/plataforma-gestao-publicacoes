@@ -1,6 +1,9 @@
 package app.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+
 import java.io.Serializable;
 
 @Entity
@@ -11,7 +14,8 @@ public class Rating implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private int value; // e.g., 1 to 5
+    @Min(1) @Max(5)
+    private int value; //1 to 5
 
     @ManyToOne
     @JoinColumn(name = "user_username", nullable = false)

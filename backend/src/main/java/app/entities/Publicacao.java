@@ -18,8 +18,6 @@ public class Publicacao implements Serializable {
     @NotBlank
     private String titulo;
 
-    // Use a relationship for Authors.
-    // Since Colaborador extends User (Single Table), this works fine.
     @ManyToMany
     @JoinTable(
             name = "publicacao_autores",
@@ -28,13 +26,17 @@ public class Publicacao implements Serializable {
     )
     private List<Colaborador> autores = new ArrayList<>();
 
-    private String areaCientifica;
-
     private String descricao;
 
-    private String tipo;
+    @ManyToOne
+    @JoinColumn(name = "tipo_id") // Links to PublicationType.id
+    private PublicationType tipo;
 
-    private String file;
+    @ManyToOne
+    @JoinColumn(name = "area_id") // Links to ScientificArea.id
+    private ScientificArea areaCientifica;
+
+    private String filename;
 
     private String resumo;
 
@@ -51,7 +53,7 @@ public class Publicacao implements Serializable {
     private List<Rating> ratings = new ArrayList<>();
 
     @OneToMany(mappedBy = "publicacao", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Comentario> comentarios = new ArrayList<>();
+    private List<Comment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "publicacao", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HistoricoEdicao> historicoEdicoes = new ArrayList<>();
@@ -67,12 +69,12 @@ public class Publicacao implements Serializable {
     public Publicacao() {
     }
 
-    public Publicacao(String titulo,  String tipo, String areaCientifica, String descricao, String file,  User createdBy) {
+    public Publicacao(String titulo, PublicationType tipo, ScientificArea areaCientifica, String descricao, String filename, User createdBy) {
         this.titulo = titulo;
         this.tipo = tipo;
         this.areaCientifica = areaCientifica;
         this.descricao = descricao;
-        this.file = file;
+        this.filename = filename;
         this.createdBy = createdBy;
         this.createdAt = LocalDateTime.now();
         this.hidden = false;
@@ -80,13 +82,13 @@ public class Publicacao implements Serializable {
 
     // Helper methods
 
-    public void addComentario(Comentario comentario) {
-        comentarios.add(comentario);
-        comentario.setPublicacao(this);
+    public void addComentario(Comment comment) {
+        comments.add(comment);
+        comment.setPublicacao(this);
     }
 
-    public void removeCometario(Comentario comentario) {
-        comentarios.remove(comentario);
+    public void removeCometario(Comment comment) {
+        comments.remove(comment);
     }
 
     public void addRating(Rating rating) {
@@ -121,20 +123,25 @@ public class Publicacao implements Serializable {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
+    public PublicationType getTipo() { return tipo; }
+    public void setTipo(PublicationType tipo) { this.tipo = tipo; }
+
+    public ScientificArea getAreaCientifica() { return areaCientifica; }
+    public void setAreaCientifica(ScientificArea areaCientifica) { this.areaCientifica = areaCientifica; }
+
+
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
 
     public List<Colaborador> getAutores() { return autores; }
     public void setAutores(List<Colaborador> autores) { this.autores = autores; }
 
-    public String getAreaCientifica() { return areaCientifica; }
-    public void setAreaCientifica(String areaCientifica) { this.areaCientifica = areaCientifica; }
 
     public String getDescricao() { return descricao; }
     public void setDescricao(String descricao) { this.descricao = descricao; }
 
-    public String getFile() { return file; }
-    public void setFile(String file) { this.file = file; }
+    public String getFilename() { return filename; }
+    public void setFilename(String file) { this.filename = file; }
 
     public String getResumo() { return resumo; }
     public void setResumo(String resumo) { this.resumo = resumo; }
@@ -151,8 +158,8 @@ public class Publicacao implements Serializable {
     public List<Rating> getRatings() { return ratings; }
     public void setRatings(List<Rating> ratings) { this.ratings = ratings; }
 
-    public List<Comentario> getComentarios() { return comentarios; }
-    public void setComentarios(List<Comentario> comentarios) { this.comentarios = comentarios; }
+    public List<Comment> getComentarios() { return comments; }
+    public void setComentarios(List<Comment> comments) { this.comments = comments; }
 
     public List<HistoricoEdicao> getHistoricoEdicoes() { return historicoEdicoes; }
     public void setHistoricoEdicoes(List<HistoricoEdicao> historicoEdicoes) { this.historicoEdicoes = historicoEdicoes; }
@@ -160,11 +167,4 @@ public class Publicacao implements Serializable {
     public List<Tag> getTags() { return tags; }
     public void setTags(List<Tag> tags) { this.tags = tags; }
 
-    public String getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(String tipo) {
-        this.tipo = tipo;
-    }
 }

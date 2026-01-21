@@ -1,0 +1,35 @@
+### --- RATINGS ---
+
+### 1. Add Rating to Publication
+POST http://localhost:8080/academics/api/publications/{{publication_id}}/ratings
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "rating": 3
+}
+
+### 2. Get Ratings
+# We call this to find the ID of the rating we just added so we can test Update/Delete
+GET http://localhost:8080/academics/api/publications/{{publication_id}}/ratings
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+> {%
+    if (response.body.length > 0) {
+        client.global.set("rating_id", response.body[0].id);
+    }
+%}
+
+### 3. Update Rating
+PATCH http://localhost:8080/academics/api/publications/{{publication_id}}/ratings/4
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "rating": 1
+}
+
+### 4. Delete Rating
+DELETE http://localhost:8080/academics/api/publications/{{publication_id}}/ratings/{{rating_id}}
+Authorization: Bearer {{auth_token}}

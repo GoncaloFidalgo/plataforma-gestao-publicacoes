@@ -11,12 +11,11 @@ import jakarta.persistence.NamedQuery;
                 query = "SELECT s FROM Responsavel s ORDER BY s.name" // JPQL
         )
 })
-public class Responsavel extends  User{
-    public Responsavel(String username, String password, String name, String email) {
-        super(username, password, name, email);
-    }
-
+public class Responsavel extends Colaborador{
     public Responsavel() {
         super();
+    }
+    public Responsavel(String username, String password, String name, String email) {
+        super(username, password, name, email);
     }
 }
