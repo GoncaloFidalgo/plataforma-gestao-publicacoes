@@ -15,6 +15,10 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import app.ejbs.CommentBean;
+import app.entities.Comment;
+import app.dtos.comments.CommentDTO;
+
 
 import java.util.List;
 
@@ -30,6 +34,9 @@ public class MeService {
 
     @EJB
     private PublicacaoBean publicationBean;
+
+    @EJB
+    private CommentBean commentBean;
 
     @Context
     private SecurityContext securityContext;
@@ -101,4 +108,26 @@ public class MeService {
                     .build();
         }
     }
+
+
+    @GET
+    @Path("/comments")
+    @Authenticated
+    public Response getMyComments(@Context SecurityContext securityContext) {
+        try {
+            String username = securityContext.getUserPrincipal().getName();
+
+            List<Comment> comments = commentBean.getCommentsByUsername(username);
+
+            return Response.ok(CommentDTO.from(comments)).build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"mensagem\": \"Erro ao obter comentários pessoais\"}")
+                    .build();
+        }
+    }
+
+
 }
