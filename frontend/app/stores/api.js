@@ -73,6 +73,18 @@ export const useAPIStore = defineStore('api', () => {
         return data // array de publications
     }
 
+
+    const getMyComments = async () => {
+        const headers = authHeader()
+        if (!headers) return null
+        // This calls the backend endpoint we fixed earlier
+        const { data } = await axios.get(`${API_BASE_URL}/users/me/comments`, {
+            headers
+        })
+        return data 
+    }
+
+
     const recoverPassword = async (email) => {
         const { data } = await axios.post(
             `${API_BASE_URL}/auth/recover-password`,
@@ -269,6 +281,7 @@ export const useAPIStore = defineStore('api', () => {
         recoverPassword,
         resetPassword,
         getMyPublications,
+        getMyComments,
         getPublicationsByUser,
         updateMe,
         getTypes, createType, deleteType,

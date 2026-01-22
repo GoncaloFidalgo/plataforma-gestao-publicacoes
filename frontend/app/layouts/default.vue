@@ -166,7 +166,13 @@ const managementLinks = computed<NavigationMenuItem[]>(() => {
   links.push({
     label: 'My Publications',
     icon: 'i-heroicons-document-magnifying-glass',
-    onSelect: () => navigateTo('/me/publications')
+    to: '/me/publications'   //tive de trocar isto para to, porque estava a dar problemas
+  })
+
+  links.push({
+    label: 'My Comments',
+    icon: 'i-heroicons-chat-bubble-left-right',
+    to: '/me/comments'      
   })
 
   return links
