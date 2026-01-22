@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+
 import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
 
@@ -77,24 +78,18 @@ public class PublicacaoBean {
                     Tag tag = entityManager.find(Tag.class, tagName);
                     if (tag != null) {
                         tagsToSet.add(tag);
+                        if (!tag.getSubscribers().isEmpty()) {
+                            emailBean.notifyTagSubscribers(
+                                    tag.getSubscribers(),
+                                    tag.getName(),
+                                    "Nova publicação",
+                                    publicacao.getTitulo(),
+                                    publicacao.getId()
+                            );
+                        }
                     }
                 }
                 publicacao.setTags(tagsToSet);
-            }
-            // Notificar subscritores das tags sobre a nova publicação
-            if (tagNames != null) {
-                for (String tagName : tagNames) {
-                    Tag tag = entityManager.find(Tag.class, tagName);
-                    if (tag != null && !tag.getSubscribers().isEmpty()) {
-                        emailBean.notifyTagSubscribers(
-                                tag.getSubscribers(),
-                                tag.getName(),
-                                "Nova publicação",
-                                publicacao.getTitulo(),
-                                publicacao.getId()
-                        );
-                    }
-                }
             }
 
 
@@ -104,6 +99,7 @@ public class PublicacaoBean {
             throw new MyConstraintViolationException(e);
         }
     }
+
     public File getFile(Long id) {
         Publicacao p = find(id);
         if (p == null || p.getFilename() == null) return null;
@@ -115,7 +111,7 @@ public class PublicacaoBean {
     public Publicacao find(Long id) {
         Publicacao p = entityManager.find(Publicacao.class, id);
         if (p != null) {
-                // Initializar as coleções
+            // Initializar as coleções
             Hibernate.initialize(p.getTags());
             Hibernate.initialize(p.getComentarios());
             Hibernate.initialize(p.getRatings());
@@ -153,8 +149,10 @@ public class PublicacaoBean {
         if (tag != null && !tag.isBlank()) query.setParameter("tag", "%" + tag + "%");
         if (titulo != null && !titulo.isBlank()) query.setParameter("titulo", "%" + titulo + "%");
         if (autorName != null && !autorName.isBlank()) query.setParameter("autorName", "%" + autorName + "%");
-        if (areaCientifica != null && !areaCientifica.isBlank()) query.setParameter("areaCientifica", "%" + areaCientifica + "%");
-        if (uploaderName != null && !uploaderName.isBlank()) query.setParameter("uploaderName", "%" + uploaderName + "%");
+        if (areaCientifica != null && !areaCientifica.isBlank())
+            query.setParameter("areaCientifica", "%" + areaCientifica + "%");
+        if (uploaderName != null && !uploaderName.isBlank())
+            query.setParameter("uploaderName", "%" + uploaderName + "%");
         if (hidden != null) query.setParameter("hidden", hidden);
 
         List<Publicacao> results = query.getResultList();
@@ -257,7 +255,6 @@ public class PublicacaoBean {
     }
 
 
-
     public void delete(Long id) throws MyEntityNotFoundException {
         Publicacao p = entityManager.find(Publicacao.class, id);
         if (p == null) throw new MyEntityNotFoundException("Publicacao not found.");
@@ -275,16 +272,14 @@ public class PublicacaoBean {
 
     public List<Publicacao> findPublicationsForUser(String username) {
         return entityManager.createQuery("""
-        SELECT DISTINCT p
-        FROM Publicacao p 
-        WHERE p.createdBy.username= :username
-        ORDER BY p.createdAt DESC
-    """, Publicacao.class)
+                            SELECT DISTINCT p
+                            FROM Publicacao p 
+                            WHERE p.createdBy.username= :username
+                            ORDER BY p.createdAt DESC
+                        """, Publicacao.class)
                 .setParameter("username", username)
                 .getResultList();
     }
-
-
 
 
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
