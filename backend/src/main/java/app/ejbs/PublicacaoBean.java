@@ -160,75 +160,108 @@ public class PublicacaoBean {
         return results;
     }
 
-    public Publicacao update(Long id, String titulo, Long tipoId, String autorUsernameToAdd, Long areaId, String descricao, String resumo, List<String> tagNames, Boolean hidden, String editorUsername) throws MyEntityNotFoundException {
-        var publicacao = entityManager.find(Publicacao.class, id);
-        if (publicacao == null) return null;
+    public Publicacao update(Long id, String titulo, Long tipoId, Long areaId, String descricao,
+                             List<String> authorUsernames, List<String> tagNames, Boolean hidden,
+                             InputStream fileContent, String extension, String editorUsername)
+            throws MyEntityNotFoundException, IOException {
+
+        Publicacao p = entityManager.find(Publicacao.class, id);
+        if (p == null) throw new MyEntityNotFoundException("Publicacao not found.");
 
         User editor = entityManager.find(User.class, editorUsername);
-        if (editor == null) throw new MyEntityNotFoundException("Editor not found");
+        if (editor == null) throw new MyEntityNotFoundException("Editor not found.");
 
-        if (titulo != null) publicacao.setTitulo(titulo);
+        // Metadata Updates
+        if (titulo != null) p.setTitulo(titulo);
+        if (descricao != null) p.setDescricao(descricao);
+        if (hidden != null) p.setHidden(hidden);
 
-        // Adicionar novo autor
-        if (autorUsernameToAdd != null && !autorUsernameToAdd.isBlank()) {
-            Colaborador newAutor = entityManager.find(Colaborador.class, autorUsernameToAdd);
-            if (newAutor != null && !publicacao.getAutores().contains(newAutor)) {
-                publicacao.addAutor(newAutor);
-            }
-        }
         if (tipoId != null) {
             PublicationType type = entityManager.find(PublicationType.class, tipoId);
-            if (type != null) publicacao.setTipo(type);
+            if (type != null) p.setTipo(type);
         }
         if (areaId != null) {
             ScientificArea area = entityManager.find(ScientificArea.class, areaId);
-            if (area != null) publicacao.setAreaCientifica(area);
+            if (area != null) p.setAreaCientifica(area);
+        }
+        if (authorUsernames != null) {
+            p.getAutores().clear();
+            for (String username : authorUsernames) {
+                Colaborador autor = entityManager.find(Colaborador.class, username);
+                if (autor != null) p.addAutor(autor);
+            }
+        }
+        if (tagNames != null) {
+            p.getTags().clear();
+            for (String tagName : tagNames) {
+                Tag tag = entityManager.find(Tag.class, tagName);
+                if (tag != null) p.addTag(tag);
+            }
         }
 
-        if (descricao != null) publicacao.setDescricao(descricao);
-        if (resumo != null) publicacao.setResumo(resumo);
-        if (hidden != null) publicacao.setHidden(hidden);
-
-        // Tags
-        if (tagNames != null) {
-            List<Tag> tagsToSet = new ArrayList<>();
-            for (String tagName : tagNames) {
-                // Encontrar a tag
-                Tag tag = entityManager.find(Tag.class, tagName);
-
-                if (tag != null) {
-                    tagsToSet.add(tag);
+        if (fileContent != null) {
+            // 1. Delete old file if exists
+            if (this.getFile(id) != null) {
+                File oldFile = this.getFile(id);
+                if (oldFile.exists()) {
+                    oldFile.delete();
                 }
             }
-            publicacao.setTags(tagsToSet);
+
+            // 2. Save new file
+            String ext = extension != null ? extension : "";
+            String newFileName = UUID.randomUUID().toString() + ext;
+
+            java.nio.file.Path path = Paths.get(UPLOAD_DIR);
+            if (!Files.exists(path)) {
+                Files.createDirectories(path);
+            }
+            Files.copy(fileContent, path.resolve(newFileName), StandardCopyOption.REPLACE_EXISTING);
+
+            // 3. Update entity reference
+            p.setFilename(newFileName);
         }
-
-
-        HistoricoEdicao history = new HistoricoEdicao("Update details", editor, publicacao);
-        publicacao.getHistoricoEdicoes().add(history);
-        entityManager.persist(history);
-
-        // Notificar subscritores de todas as tags existentes sobre a edição
-        for (Tag tag : publicacao.getTags()) {
+        for (Tag tag : p.getTags()) {
             if (!tag.getSubscribers().isEmpty()) {
                 emailBean.notifyTagSubscribers(
                         tag.getSubscribers(),
                         tag.getName(),
                         "Publicação editada",
-                        publicacao.getTitulo(),
-                        publicacao.getId()
+                        p.getTitulo(),
+                        p.getId()
                 );
             }
         }
 
-        // Para guardar as alterações
+        HistoricoEdicao history = new HistoricoEdicao("Update details", editor, p);
+        p.getHistoricoEdicoes().add(history);
+        entityManager.persist(history);
         entityManager.flush();
 
-        // Atualizar as coleções
-        Hibernate.initialize(publicacao.getTags());
-        Hibernate.initialize(publicacao.getAutores());
+        Hibernate.initialize(p.getTags());
+        Hibernate.initialize(p.getAutores());
+        Hibernate.initialize(p.getRatings());
+        Hibernate.initialize(p.getComentarios());
+        Hibernate.initialize(p.getHistoricoEdicoes());
 
-        return publicacao;
+        return p;
+    }
+
+
+
+    public void delete(Long id) throws MyEntityNotFoundException {
+        Publicacao p = entityManager.find(Publicacao.class, id);
+        if (p == null) throw new MyEntityNotFoundException("Publicacao not found.");
+
+
+        if (this.getFile(id) != null) {
+            File file = this.getFile(id);
+            if (file.exists()) {
+                file.delete();
+            }
+        }
+
+        entityManager.remove(p);
     }
 
     public List<Publicacao> findPublicationsForUser(String username) {
@@ -244,11 +277,6 @@ public class PublicacaoBean {
 
 
 
-
-    public void delete(Long id) {
-        var publicacao = entityManager.find(Publicacao.class, id);
-        if (publicacao != null) entityManager.remove(publicacao);
-    }
 
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public void updateResumo(Long id, String novoResumo) {

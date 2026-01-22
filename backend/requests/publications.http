@@ -79,7 +79,43 @@ Content-Type: application/pdf
 > {%
     client.global.set("publication_id", response.body.id);
 %}
+### 5. Update Publication (PUT)
+# UPDATED: Now uses multipart/form-data to allow file updates.
+PUT http://localhost:8080/academics/api/publications/{{publication_id}}
+Authorization: Bearer {{auth_token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
 
+--WebAppBoundary
+Content-Disposition: form-data; name="metadata"
+Content-Type: application/json
+
+{
+  "titulo": "UPDATED Title via API",
+  "tipoId": {{type_id}},
+  "areaId": {{area_id}},
+  "descricao": "This description was updated.",
+  "autores": ["admin"],
+  "tags": ["Java", "AI"],
+  "hidden": true
+}
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="com.pdf"
+Content-Type: application/pdf
+
+< ./com.pdf
+--WebAppBoundary--
+
+### 6. Verify Update (Get Details)
+GET http://localhost:8080/academics/api/publications/{{publication_id}}
+Authorization: Bearer {{auth_token}}
+
+### 7. Delete Publication
+DELETE http://localhost:8080/academics/api/publications/{{publication_id}}
+Authorization: Bearer {{auth_token}}
+
+### 8. Verify Delete (Should return 404 Not Found)
+GET http://localhost:8080/academics/api/publications/{{publication_id}}
+Authorization: Bearer {{auth_token}}
 ### 5. Get All Publications (Search)
 GET http://localhost:8080/academics/api/publications
 Authorization: Bearer {{auth_token}}
