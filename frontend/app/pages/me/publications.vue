@@ -155,7 +155,6 @@ const handleDownload = async (publications) => {
     
     toast.add({ title: 'Download started', color: 'green' })
   } catch (error) {
-    console.log(error);
     toast.add({ title: 'Download failed', description: 'File not found or server error', color: 'red' })
   } finally {
     downloadingId.value = null

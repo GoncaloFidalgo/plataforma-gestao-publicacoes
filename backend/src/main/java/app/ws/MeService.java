@@ -3,10 +3,14 @@ package app.ws;
 import app.dtos.ActivityDTO;
 import app.dtos.UserDTO;
 import app.dtos.publication.PublicacaoDTO;
+import app.dtos.tags.TagDTO;
+import app.dtos.tags.TagSubscriptionDTO;
 import app.ejbs.PublicacaoBean;
+import app.ejbs.TagBean;
 import app.ejbs.UserBean;
 import app.entities.Publicacao;
 import app.exceptions.MyConstraintViolationException;
+import app.exceptions.MyEntityExistsException;
 import app.exceptions.MyEntityNotFoundException;
 import app.security.Authenticated;
 import jakarta.annotation.security.RolesAllowed;
@@ -23,6 +27,7 @@ import app.dtos.comments.CommentDTO;
 
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Path("users/me")
@@ -39,6 +44,9 @@ public class MeService {
 
     @EJB
     private CommentBean commentBean;
+
+    @EJB
+    private TagBean tagBean;
 
     @Context
     private SecurityContext securityContext;
@@ -148,6 +156,61 @@ public class MeService {
             e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"mensagem\": \"Erro ao obter comentários pessoais\"}")
+                    .build();
+        }
+    }
+
+    @POST
+    @Path("/subscribed-tags")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Authenticated
+    public Response subscribeTags(@Valid TagSubscriptionDTO dto) {
+        String username = securityContext.getUserPrincipal().getName();
+
+        try {
+            tagBean.subscribeTags(username, dto.getTag_id());
+            return Response.ok("{\"mensagem\":\"Tags subscritas com sucesso.\"}").build();
+        } catch (MyEntityNotFoundException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (MyEntityExistsException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"mensagem\": \"" + e.getMessage() + "\"}")
+                    .build();
+        }
+    }
+
+    @DELETE
+    @Path("/subscribed-tags/{name}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response unsubscribeTag(@PathParam("name") String name) {
+        String username = securityContext.getUserPrincipal().getName();
+
+        try {
+            tagBean.unsubscribeTags(username, List.of(name));
+            return Response.ok("{\"mensagem\":\"Subscrição removida com sucesso.\"}").build();
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        }
+    }
+
+    @GET
+    @Path("/subscribed-tags")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getMySubscribedTags() {
+        String username = securityContext.getUserPrincipal().getName();
+
+        try {
+            var dtos = tagBean.getMySubscribedTags(username);
+            return Response.ok(dtos).build();
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(e.getMessage())
                     .build();
         }
     }
