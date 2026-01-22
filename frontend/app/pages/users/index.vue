@@ -81,10 +81,14 @@
             <template #view-cell="{ row }">
               <div class="actions-cell flex items-center justify-end gap-1.5">
 
-                <!-- Edit -->
                 <UTooltip text="Ver Publicações">
                   <UButton icon="i-heroicons-document-magnifying-glass" size="md" class="icon-btn"
                            :to="`/users/${row.original.username}/publications`"/>
+                </UTooltip>
+
+                <UTooltip text="Ver Tags">
+                  <UButton icon="i-heroicons-tag" size="md" class="icon-btn"
+                           :to="`/users/${row.original.username}/tags`"/>
                 </UTooltip>
 
 

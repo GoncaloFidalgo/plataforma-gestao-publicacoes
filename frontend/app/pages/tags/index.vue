@@ -1,211 +1,183 @@
 <template>
-  <div class="space-y-6">
-
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Tags Management</h1>
-        <p class="text-gray-500 text-sm">Create and manage content tags</p>
-      </div>
-      <UButton
-          icon="i-heroicons-plus"
-          color="primary"
-          label="New Tag"
-          @click="openCreateModal"
-      />
-    </div>
-
-    <div class="table-wrapper">
-      <UTable
-          :data="filteredTags"
-          :columns="columns"
-          :loading="tagStore.loading" class="data-table"
-      >
-        <template #hidden-cell="{ row }">
-          <UBadge
-              :color="row.original.hidden ? 'gray' : 'green'"
-              variant="subtle"
-              size="xs"
-          >
-            {{ row.original.hidden ? 'Hidden' : 'Visible' }}
-          </UBadge>
-        </template>
-
-        <template #actions-cell="{ row }">
-          <div class="flex items-center gap-2">
-            <UTooltip text="Edit tag">
-              <UButton icon="i-heroicons-pencil-square" size="md" variant="ghost" class="icon-btn"
-                       @click="openEditModal(row.original)"/>
-            </UTooltip>
-            <UTooltip text="Delete tag">
-              <UButton icon="i-heroicons-trash" size="md" variant="ghost" class="icon-btn icon-btn--danger"
-                       @click="confirmDelete(row.original)"/>
-            </UTooltip>
+  <div class="min-h-screen px-4 sm:px-6 lg:px-8 py-10 bg-gray-50 dark:bg-gray-950">
+    <UCard class="max-w-4xl mx-auto shadow-xl ring-1 ring-gray-200 dark:ring-gray-800 bg-white dark:bg-gray-900">
+      <template #header>
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Tags</h1>
           </div>
-        </template>
-      </UTable>
-    </div>
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+            <USelectMenu v-model="selectedArea" :items="areaItems" class="w-full sm:w-56" />
 
-    <!-- Create/Edit Modal -->
-    <UModal
-        v-model:open="isModalOpen"
-        :title="isEditing ? 'Edit Tag' : 'Create New Tag'"
-    >
 
-      <template #content>
-        <UCard>
-          <template #header>
-            <div class="flex items-center justify-between">
-              <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
-                {{ isEditing ? 'Edit Tag' : 'Create New Tag' }}
-              </h3>
-              <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" class="-my-1"
-                       @click="isModalOpen = false"/>
+            <UInput v-model="search" icon="i-heroicons-magnifying-glass" placeholder="Procurar tag pelo nome..."
+              class="w-full sm:w-80" />
+            <UButton color="gray" variant="soft" icon="i-heroicons-x-mark" @click="clearFilters">
+              Limpar
+            </UButton>
+          </div>
+
+          <UButton icon="i-heroicons-arrow-path" color="primary" variant="soft" :loading="tagStore.loading"
+            @click="tagStore.refreshAll()">
+            Atualizar
+          </UButton>
+        </div>
+      </template>
+
+      <div v-if="tagStore.loading" class="py-10 text-center text-gray-500">
+        A carregar...
+      </div>
+
+      <div v-else class="space-y-3">
+        <div v-for="t in filteredTags" :key="t.name"
+          class="flex items-center justify-between gap-4 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <p class="font-semibold text-gray-900 dark:text-white truncate">
+                {{ t.name }}
+              </p>
+              <UBadge v-if="t.scientific_area" color="gray" variant="soft">
+                {{ t.scientific_area }}
+              </UBadge>
             </div>
-          </template>
 
-          <UForm id="tag-form" :schema="schema" :state="state" @submit="handleSave" class="space-y-4">
+            <p v-if="t.description" class="text-sm text-gray-500 mt-1 line-clamp-2">
+              {{ t.description }}
+            </p>
 
-            <UFormField label="Name (Unique ID)" name="name">
-              <UInput v-model="state.name" :disabled="isEditing" placeholder="e.g. Java" class="w-full"/>
-            </UFormField>
+            <p class="text-xs text-gray-400 mt-2">
+              Subscritores: <strong>{{ t.subscritores_count ?? 0 }}</strong>
+            </p>
+          </div>
 
-            <UFormField label="Description" name="description">
-              <UTextarea v-model="state.description" placeholder="Short description..." class="w-full"/>
-            </UFormField>
+          <div class="flex items-center gap-2 shrink-0">
+            <UTooltip :text="isSubscribed(t.name) ? 'Remover subscrição' : 'Subscrever'">
+              <template v-if="isSubscribed(t.name)">
+                <UButton :key="`unsub-${t.name}`" icon="i-heroicons-x-mark" color="red" variant="soft"
+                  @click="openConfirm(t.name)" />
+              </template>
+              <template v-else>
+                <UButton :key="`sub-${t.name}`" icon="i-heroicons-check" color="primary" variant="soft"
+                  @click="openConfirm(t.name)" />
+              </template>
+            </UTooltip>
 
-            <UFormField label="Scientific Area" name="scientific_area">
-              <UInput v-model="state.scientific_area" placeholder="e.g. Computer Science" class="w-full"/>
-            </UFormField>
+          </div>
+        </div>
+      </div>
+    </UCard>
 
-            <UFormField name="hidden">
-              <UCheckbox v-model="state.hidden" label="Hide this tag from public lists"/>
-            </UFormField>
+    <!-- Modal de confirmação -->
+    <UModal v-model:open="confirmOpen" :title="confirmMode === 'subscribe' ? 'Subscrever tag' : 'Remover subscrição'"
+      :description="`Confirma a ação para a tag “${confirmTag}”.`">
+      <template #body>
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Tens a certeza que queres
+          <strong>{{ confirmMode === 'subscribe' ? 'subscrever ' : 'remover a subscrição de ' }}</strong>
+          <span class="font-semibold">“{{ confirmTag }}”</span>?
+        </p>
+      </template>
 
-          </UForm>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton color="primary" variant="outline" @click="confirmOpen = false">
+            Cancelar
+          </UButton>
 
-          <template #footer>
-            <div class="flex justify-end gap-3">
-              <UButton label="Cancel" color="neutral" variant="ghost" @click="isModalOpen = false"/>
-              <UButton type="submit" form="tag-form" label="Save Tag" color="primary" :loading="saving"/>
-            </div>
-          </template>
-        </UCard>
+          <UButton :color="confirmMode === 'subscribe' ? 'primary' : 'primary'" :loading="actionLoading"
+            @click="confirmAction">
+            Confirmar
+          </UButton>
+        </div>
       </template>
     </UModal>
-    <ConfirmDeleteModal
-        v-model="isDeleteModalOpen"
-        type="tag"
-        :item-name="itemToDelete?.name"
-        :loading="deleting"
-        @confirm="executeDelete"
-    />
+
   </div>
 </template>
 
 <script setup>
-import {z} from 'zod'
+import { ref, onMounted, computed, watchEffect } from 'vue'
+import { useToast } from '#imports'
+import { useTagStore } from '~/stores/tags'
 
 const tagStore = useTagStore()
-const authStore = useAuthStore()
 const toast = useToast()
-
-definePageMeta({
-  middleware: 'responsavel'
-})
-
-const columns = [
-  {accessorKey: 'name', header: 'Name'},
-  {accessorKey: 'description', header: 'Description'},
-  {accessorKey: 'scientific_area', header: 'Area'},
-  {accessorKey: 'publicacoes_count', header: 'Pubs'},
-  {accessorKey: 'subscritores_count', header: 'Subs'},
-  {accessorKey: 'hidden', header: 'Status'},
-  {id: 'actions', header: 'Actions'}
-]
-
 const search = ref('')
+const selectedArea = ref('Todas as áreas')
+const confirmOpen = ref(false)
+const confirmTag = ref('')
+const confirmMode = ref('subscribe') // 'subscribe' | 'unsubscribe'
+const actionLoading = ref(false)
+
+const subscribedNames = computed(() =>
+  new Set((tagStore.mySubscribedTags || []).map(t => (t?.name || '').trim().toLowerCase()))
+)
+
+const isSubscribed = (tagName) =>
+  subscribedNames.value.has((tagName || '').trim().toLowerCase())
+
+
+
+const openConfirm = (tagName) => {
+  confirmTag.value = tagName
+  confirmMode.value = isSubscribed(tagName) ? 'unsubscribe' : 'subscribe'
+  confirmOpen.value = true
+}
+
+const areaItems = computed(() => {
+  const set = new Set()
+
+  for (const t of (tagStore.tags || [])) {
+    const a = (t?.scientific_area ?? '').toString().trim()
+    if (a) set.add(a)
+  }
+
+  return ['Todas as áreas', ...Array.from(set).sort((a, b) => a.localeCompare(b))]
+})
+
+
+
 const filteredTags = computed(() => {
-  if (!search.value) return tagStore.tags
-  return tagStore.tags.filter(t =>
-      t.name.toLowerCase().includes(search.value.toLowerCase())
-  )
+  const q = search.value.trim().toLowerCase()
+  const area = selectedArea.value === 'Todas as áreas' ? '' : (selectedArea.value || '').trim()
+
+  return (tagStore.tags || []).filter(t => {
+    const nameOk = !q || (t?.name || '').toLowerCase().includes(q)
+    const areaOk = !area || (t?.scientific_area || '').toString().trim() === area
+    return nameOk && areaOk
+  })
 })
 
-const isModalOpen = ref(false)
-const isEditing = ref(false)
-const saving = ref(false)
-const state = reactive({
-  name: '',
-  description: '',
-  scientific_area: '',
-  hidden: false
-})
 
-const schema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
-  scientific_area: z.string().min(1, 'Area is required'),
-  hidden: z.boolean()
-})
 
-const isDeleteModalOpen = ref(false)
-const itemToDelete = ref(null)
-const deleting = ref(false)
-
-onMounted(() => {
-  tagStore.fetchTags()
-})
-
-const openCreateModal = () => {
-  isEditing.value = false
-  Object.assign(state, {name: '', description: '', scientific_area: '', hidden: false})
-  isModalOpen.value = true
+const clearFilters = () => {
+  search.value = ''
+  selectedArea.value = 'Todas as áreas'
 }
 
-const openEditModal = (tag) => {
-  isEditing.value = true
-  Object.assign(state, tag)
-  isModalOpen.value = true
-}
-
-const handleSave = async () => {
-  saving.value = true
+const confirmAction = async () => {
+  actionLoading.value = true
   try {
-    if (isEditing.value) {
-      await tagStore.updateTag(state.name, state)
-      toast.add({title: 'Tag updated', color: 'green'})
+    if (confirmMode.value === 'subscribe') {
+      await tagStore.subscribeTag(confirmTag.value)
+      toast.add({ title: 'Subscrito', description: `Agora estás subscrito em “${confirmTag.value}”.` })
     } else {
-      await tagStore.createTag(state)
-      toast.add({title: 'Tag created', color: 'green'})
+      await tagStore.unsubscribeTag(confirmTag.value)
+      toast.add({ title: 'Subscrição removida', description: `Removeste a subscrição de “${confirmTag.value}”.` })
     }
-    isModalOpen.value = false
-  } catch (error) {
-    const msg = error.response?.data || 'Failed to save tag'
-    toast.add({title: 'Error', description: msg, color: 'red'})
+    confirmOpen.value = false
+  } catch (e) {
+    toast.add({
+      title: 'Erro',
+      description: e?.response?.data?.mensagem || e?.response?.data || 'Ocorreu um erro.',
+      color: 'red'
+    })
   } finally {
-    saving.value = false
+    actionLoading.value = false
   }
 }
 
-const confirmDelete = (tag) => {
-  itemToDelete.value = tag
-  isDeleteModalOpen.value = true
-}
-
-const executeDelete = async () => {
-  if (!itemToDelete.value) return
-
-  deleting.value = true
-  try {
-    await tagStore.deleteTag(itemToDelete.value.name)
-    toast.add({title: 'Tag deleted', color: 'green'})
-    isDeleteModalOpen.value = false
-  } catch (error) {
-    const msg = error.response?.data?.mensagem || 'Error deleting tag'
-    toast.add({title: 'Error', description: msg, color: 'red'})
-  } finally {
-    deleting.value = false
-  }
-}
+onMounted(async () => {
+  await tagStore.refreshAll()
+})
 </script>

@@ -1,0 +1,211 @@
+<template>
+  <div class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Tags Management</h1>
+        <p class="text-gray-500 text-sm">Create and manage content tags</p>
+      </div>
+      <UButton
+          icon="i-heroicons-plus"
+          color="primary"
+          label="New Tag"
+          @click="openCreateModal"
+      />
+    </div>
+
+    <div class="table-wrapper">
+      <UTable
+          :data="filteredTags"
+          :columns="columns"
+          :loading="tagStore.loading" class="data-table"
+      >
+        <template #hidden-cell="{ row }">
+          <UBadge
+              :color="row.original.hidden ? 'gray' : 'green'"
+              variant="subtle"
+              size="xs"
+          >
+            {{ row.original.hidden ? 'Hidden' : 'Visible' }}
+          </UBadge>
+        </template>
+
+        <template #actions-cell="{ row }">
+          <div class="flex items-center gap-2">
+            <UTooltip text="Edit tag">
+              <UButton icon="i-heroicons-pencil-square" size="md" variant="ghost" class="icon-btn"
+                       @click="openEditModal(row.original)"/>
+            </UTooltip>
+            <UTooltip text="Delete tag">
+              <UButton icon="i-heroicons-trash" size="md" variant="ghost" class="icon-btn icon-btn--danger"
+                       @click="confirmDelete(row.original)"/>
+            </UTooltip>
+          </div>
+        </template>
+      </UTable>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <UModal
+        v-model:open="isModalOpen"
+        :title="isEditing ? 'Edit Tag' : 'Create New Tag'"
+    >
+
+      <template #content>
+        <UCard>
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
+                {{ isEditing ? 'Edit Tag' : 'Create New Tag' }}
+              </h3>
+              <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" class="-my-1"
+                       @click="isModalOpen = false"/>
+            </div>
+          </template>
+
+          <UForm id="tag-form" :schema="schema" :state="state" @submit="handleSave" class="space-y-4">
+
+            <UFormField label="Name (Unique ID)" name="name">
+              <UInput v-model="state.name" :disabled="isEditing" placeholder="e.g. Java" class="w-full"/>
+            </UFormField>
+
+            <UFormField label="Description" name="description">
+              <UTextarea v-model="state.description" placeholder="Short description..." class="w-full"/>
+            </UFormField>
+
+            <UFormField label="Scientific Area" name="scientific_area">
+              <UInput v-model="state.scientific_area" placeholder="e.g. Computer Science" class="w-full"/>
+            </UFormField>
+
+            <UFormField name="hidden">
+              <UCheckbox v-model="state.hidden" label="Hide this tag from public lists"/>
+            </UFormField>
+
+          </UForm>
+
+          <template #footer>
+            <div class="flex justify-end gap-3">
+              <UButton label="Cancel" color="neutral" variant="ghost" @click="isModalOpen = false"/>
+              <UButton type="submit" form="tag-form" label="Save Tag" color="primary" :loading="saving"/>
+            </div>
+          </template>
+        </UCard>
+      </template>
+    </UModal>
+    <ConfirmDeleteModal
+        v-model="isDeleteModalOpen"
+        type="tag"
+        :item-name="itemToDelete?.name"
+        :loading="deleting"
+        @confirm="executeDelete"
+    />
+  </div>
+</template>
+
+<script setup>
+import {z} from 'zod'
+
+const tagStore = useTagStore()
+const authStore = useAuthStore()
+const toast = useToast()
+
+definePageMeta({
+  middleware: 'responsavel'
+})
+
+const columns = [
+  {accessorKey: 'name', header: 'Name'},
+  {accessorKey: 'description', header: 'Description'},
+  {accessorKey: 'scientific_area', header: 'Area'},
+  {accessorKey: 'publicacoes_count', header: 'Pubs'},
+  {accessorKey: 'subscritores_count', header: 'Subs'},
+  {accessorKey: 'hidden', header: 'Status'},
+  {id: 'actions', header: 'Actions'}
+]
+
+const search = ref('')
+const filteredTags = computed(() => {
+  if (!search.value) return tagStore.tags
+  return tagStore.tags.filter(t =>
+      t.name.toLowerCase().includes(search.value.toLowerCase())
+  )
+})
+
+const isModalOpen = ref(false)
+const isEditing = ref(false)
+const saving = ref(false)
+const state = reactive({
+  name: '',
+  description: '',
+  scientific_area: '',
+  hidden: false
+})
+
+const schema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().optional(),
+  scientific_area: z.string().min(1, 'Area is required'),
+  hidden: z.boolean()
+})
+
+const isDeleteModalOpen = ref(false)
+const itemToDelete = ref(null)
+const deleting = ref(false)
+
+onMounted(() => {
+  tagStore.fetchTags()
+})
+
+const openCreateModal = () => {
+  isEditing.value = false
+  Object.assign(state, {name: '', description: '', scientific_area: '', hidden: false})
+  isModalOpen.value = true
+}
+
+const openEditModal = (tag) => {
+  isEditing.value = true
+  Object.assign(state, tag)
+  isModalOpen.value = true
+}
+
+const handleSave = async () => {
+  saving.value = true
+  try {
+    if (isEditing.value) {
+      await tagStore.updateTag(state.name, state)
+      toast.add({title: 'Tag updated', color: 'green'})
+    } else {
+      await tagStore.createTag(state)
+      toast.add({title: 'Tag created', color: 'green'})
+    }
+    isModalOpen.value = false
+  } catch (error) {
+    const msg = error.response?.data || 'Failed to save tag'
+    toast.add({title: 'Error', description: msg, color: 'red'})
+  } finally {
+    saving.value = false
+  }
+}
+
+const confirmDelete = (tag) => {
+  itemToDelete.value = tag
+  isDeleteModalOpen.value = true
+}
+
+const executeDelete = async () => {
+  if (!itemToDelete.value) return
+
+  deleting.value = true
+  try {
+    await tagStore.deleteTag(itemToDelete.value.name)
+    toast.add({title: 'Tag deleted', color: 'green'})
+    isDeleteModalOpen.value = false
+  } catch (error) {
+    const msg = error.response?.data?.mensagem || 'Error deleting tag'
+    toast.add({title: 'Error', description: msg, color: 'red'})
+  } finally {
+    deleting.value = false
+  }
+}
+</script>

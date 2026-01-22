@@ -4,10 +4,7 @@ import app.dtos.comments.CommentDTO;
 import app.dtos.publication.PublicacaoDTO;
 import app.dtos.UserDTO;
 import app.dtos.rating.UserRatingsResponseDTO;
-import app.ejbs.CommentBean;
-import app.ejbs.PublicacaoBean;
-import app.ejbs.RatingBean;
-import app.ejbs.UserBean;
+import app.ejbs.*;
 import app.entities.Comment;
 import app.entities.Publicacao;
 import app.entities.Rating;
@@ -42,6 +39,9 @@ public class UserService {
 
     @EJB
     private RatingBean ratingBean;
+
+    @EJB
+    private TagBean tagBean;
 
     //region GET
     @GET
@@ -300,6 +300,22 @@ public class UserService {
             e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"mensagem\":\"Erro ao obter publicações pessoais\"}")
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/{username}/subscribed-tags")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"Administrator"})
+    public Response getUserSubscribedTags(@PathParam("username") String id) {
+        try {
+            var dtos = tagBean.getUserSubscribedTags(id);
+            return Response.ok(dtos).build();
+
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(e.getMessage())
                     .build();
         }
     }

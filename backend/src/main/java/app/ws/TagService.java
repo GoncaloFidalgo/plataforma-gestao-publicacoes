@@ -1,6 +1,6 @@
 package app.ws;
 
-import app.dtos.TagDTO;
+import app.dtos.tags.TagDTO;
 import app.ejbs.TagBean;
 import app.entities.Tag;
 import app.exceptions.MyEntityExistsException;
@@ -30,9 +30,9 @@ public class TagService {
 
     @GET
     public Response getAll(@QueryParam("hidden") Boolean hidden) {
-        List<Tag> tags = tagBean.findAll(hidden);
-        return Response.ok(TagDTO.from(tags)).build();
+        return Response.ok(tagBean.findAllWithCounts(hidden)).build();
     }
+
 
     @POST
     @RolesAllowed({"Administrator", "Responsavel"})
@@ -72,4 +72,6 @@ public class TagService {
             return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
         }
     }
+
+
 }
