@@ -167,6 +167,101 @@ public class PublicacaoService {
         int i = filename.lastIndexOf('.');
         return (i > 0) ? filename.substring(i) : "";
     }
+    @PUT
+    @Path("{id}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @RolesAllowed({"Colaborador", "Responsavel", "Administrator"})
+    public Response update(@PathParam("id") Long id, MultipartFormDataInput input) {
+        try {
+            Publicacao existing = publicacaoBean.find(id);
+            if (existing == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+            String currentUser = securityContext.getUserPrincipal().getName();
+            boolean isOwner = existing.getCreatedBy().getUsername().equals(currentUser);
+            boolean isAdminOrResp = securityContext.isUserInRole("Administrator") || securityContext.isUserInRole("Responsavel");
+
+            if (!isOwner && !isAdminOrResp) {
+                return Response.status(Response.Status.FORBIDDEN).entity("You can only edit your own publications.").build();
+            }
+
+            Map<String, List<InputPart>> form = input.getFormDataMap();
+
+            // 1. Metadata
+            List<InputPart> metaParts = form.get("metadata");
+            if (metaParts == null || metaParts.isEmpty()) return Response.status(Response.Status.BAD_REQUEST).entity("metadata missing").build();
+
+            String metaJson = metaParts.get(0).getBodyAsString();
+            ObjectMapper mapper = new ObjectMapper();
+            PublicacaoCreateDTO dto = mapper.readValue(metaJson, PublicacaoCreateDTO.class);
+
+            // 2. File
+            InputStream fileStream = null;
+            String extension = null;
+
+            List<InputPart> fileParts = form.get("file");
+            if (fileParts != null && !fileParts.isEmpty()) {
+                InputPart part = fileParts.get(0);
+                String fileName = getFileName(part.getHeaders());
+                extension = getExtension(fileName);
+                fileStream = part.getBody(InputStream.class, null);
+
+                if (!extension.equalsIgnoreCase(".pdf") && !extension.equalsIgnoreCase(".zip")) {
+                    return Response.status(Response.Status.BAD_REQUEST).entity("File must be PDF or ZIP").build();
+                }
+            }
+
+            // 3. Update in Bean
+            Publicacao updated = publicacaoBean.update(
+                    id,
+                    dto.getTitulo(),
+                    dto.getTipoId(),
+                    dto.getAreaId(),
+                    dto.getDescricao(),
+                    dto.getAutores(),
+                    dto.getTags(),
+                    dto.getHidden(),
+                    fileStream,
+                    extension,
+                    currentUser
+            );
+
+            return Response.ok(PublicacaoDTO.from(updated)).build();
+
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error updating publication").build();
+        }
+    }
+
+    // --- NEW: Delete Publicacao ---
+    @DELETE
+    @Path("{id}")
+    @RolesAllowed({"Colaborador", "Responsavel", "Administrator"})
+    public Response delete(@PathParam("id") Long id) {
+        try {
+            Publicacao existing = publicacaoBean.find(id);
+            if (existing == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+            String currentUser = securityContext.getUserPrincipal().getName();
+            boolean isOwner = existing.getCreatedBy().getUsername().equals(currentUser);
+            boolean isAdminOrResp = securityContext.isUserInRole("Administrator") || securityContext.isUserInRole("Responsavel");
+
+            if (!isOwner && !isAdminOrResp) {
+                return Response.status(Response.Status.FORBIDDEN).entity("You can only delete your own publications.").build();
+            }
+
+            publicacaoBean.delete(id);
+            return Response.ok("{\"mensagem\": \"Publicação removida com sucesso\"}").build();
+
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error deleting publication").build();
+        }
+    }
 
 
     @GET
@@ -359,76 +454,6 @@ public class PublicacaoService {
 
 
 
-   /* @PUT
-    @Path("/{id}")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response updatePublication(@PathParam("id") Long id, Map<String, Object> payload) {
-        try {
-            String titulo = (String) payload.get("titulo");
-            String areaCientifica = (String) payload.get("area_cientifica");
-            String descricao = (String) payload.get("descricao");
-            String resumo = (String) payload.get("resumo");
-            String tags = (String) payload.get("tags"); // Expecting "Tag1, Tag2"
-            Boolean hidden = payload.get("hidden") != null ? (Boolean) payload.get("hidden") : null;
-
-            String editorUsername = securityContext.getUserPrincipal().getName();
-
-            // Handle 'autor' legacy logic if needed (omitted for brevity, keep your original if needed)
-            String autor = (String) payload.get("autor");
-
-            var publicacao = publicacaoBean.update(
-                    id,
-                    titulo,
-                    autor,
-                    areaCientifica,
-                    descricao,
-                    resumo,
-                    tags,
-                    hidden,
-                    editorUsername // Pass current user for History
-            );
-
-            if (publicacao == null) {
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity("{\"mensagem\": \"Publicação não encontrada\"}")
-                        .build();
-            }
-
-            return Response.ok(PublicacaoDTO.from(publicacao)).build();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"mensagem\": \"Erro ao processar o pedido\"}")
-                    .build();
-        }
-    }*/
-
-   /* @DELETE
-    @Path("/{id}")
-    public Response delete(@PathParam("id") Long id) {
-        var publicacao = publicacaoBean.find(id);
-        if (publicacao == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-
-        try {
-            publicacaoBean.delete(id);
-
-            if (publicacao.getFile() != null && !publicacao.getFile().isBlank()) {
-                java.nio.file.Path filePath = java.nio.file.Paths.get(UPLOAD_DIR, publicacao.getFile());
-                java.nio.file.Files.deleteIfExists(filePath);
-            }
-
-            return Response.status(Response.Status.NO_CONTENT).build();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"mensagem\": \"Erro ao apagar publicação\"}")
-                    .build();
-        }
-    }*/
 
    @GET
    @Path("{id}/ratings")

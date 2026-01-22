@@ -25,7 +25,7 @@
           <UFormField label="Type" name="tipo" required>
             <USelectMenu
                 v-model="state.tipo"
-                :options="['Article', 'Thesis', 'Tutorial', 'Book', 'Report']"
+                :items="typeOptions"
                 placeholder="Select type"
                 class="w-full"
             />
@@ -33,7 +33,12 @@
 
           <!-- Scientific Area -->
           <UFormField label="Scientific Area" name="areaCientifica" required>
-            <UInput v-model="state.areaCientifica" placeholder="e.g. Computer Science" class="w-full" />
+            <USelectMenu
+                v-model="state.areaCientifica"
+                :items="areaOptions"
+                placeholder="Select area"
+                class="w-full"
+            />
           </UFormField>
         </div>
 
@@ -41,7 +46,7 @@
         <UFormField label="Tags" name="tags">
           <USelectMenu
               v-model="state.tags"
-              :options="tagOptions"
+              :items="tagOptions"
               placeholder="Select tags"
               multiple
               searchable
@@ -94,6 +99,7 @@ import { z } from 'zod'
 
 const pubStore = usePublicationStore()
 const tagStore = useTagStore()
+const referenceStore = useReferenceStore()
 const toast = useToast()
 
 
@@ -104,26 +110,46 @@ const fileInput = ref(null)
 
 const state = reactive({
   titulo: '',
-  tipo: '',
-  areaCientifica: '',
+  tipo: null,
+  areaCientifica: null,
   descricao: '',
   tags: [],
   hidden: false,
   file: null
 })
 
-const tagOptions = computed(() => tagStore.tags.map(t => t.name))
+const tagOptions = computed(() => {
+  return tagStore.tags
+      .filter(t => !t.hidden)
+      .map(t => t.name)
+})
 
+const typeOptions = computed(() => {
+  return referenceStore.types
+      .map(t => ({
+        label: t.name,
+        value: t.id,
+      }))
+})
+const areaOptions = computed(() => {
+  return referenceStore.areas
+      .map(t => ({
+        label: t.name,
+        value: t.id,
+      }))
+})
+
+console.log(typeOptions)
 onMounted(() => {
-  if (tagStore.tags.length === 0) {
-    tagStore.fetchTags()
-  }
+ tagStore.fetchTags()
+referenceStore.fetchTypes()
+  referenceStore.fetchAreas()
 })
 
 const schema = z.object({
   titulo: z.string().min(3, 'Title must be at least 3 characters'),
-  tipo: z.string().min(1, 'Type is required'),
-  areaCientifica: z.string().min(1, 'Scientific area is required'),
+  tipo: z.any().refine(val => val && val.value, 'Type is required'),
+  areaCientifica: z.any().refine(val => val && val.value, 'Scientific area is required'),
   descricao: z.string().min(10, 'Description must be at least 10 characters')
 })
 
@@ -166,6 +192,8 @@ const handleSubmit = async () => {
 
     await pubStore.create({
       ...state,
+      tipo: state.tipo.value,
+      areaCientifica: state.areaCientifica.value,
       autores: []
     })
 
@@ -173,6 +201,7 @@ const handleSubmit = async () => {
     await navigateTo('/publications')
 
   } catch (error) {
+    console.log(error)
     const msg = error.response?.data?.mensagem || error.response?.data || 'Failed to upload'
     toast.add({ title: 'Error', description: msg, color: 'red' })
   } finally {
