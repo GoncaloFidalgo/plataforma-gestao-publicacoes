@@ -323,6 +323,7 @@ export const useAPIStore = defineStore('api', () => {
         addRating, updateRating, deleteRating,
         getUserRating,
         updateCommentVisibility,
-        createComment, updateComment, deleteComment,
+        createComment,updateComment, deleteComment,
+        createPublication
     }
 })

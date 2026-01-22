@@ -89,8 +89,8 @@ export const usePublicationStore = defineStore('publications', () => {
         // 1. Construct Metadata JSON
         const metadata = {
             titulo: form.titulo,
-            tipo: form.tipo,
-            area_cientifica: form.areaCientifica,
+            tipoId: form.tipo,
+            areaId: form.areaCientifica,
             descricao: form.descricao,
             autores: Array.isArray(form.autores) ? form.autores : [],
             tags: form.tags,
