@@ -99,4 +99,14 @@ public class CommentBean {
         p.getComentarios().remove(comment);
         em.remove(comment);
     }
+
+    public List<Comment> getCommentsByUsername(String username) {
+        return em.createQuery("SELECT c FROM Comment c WHERE c.user.username = :username ORDER BY c.createdAt DESC", Comment.class)
+                .setParameter("username", username)
+                .getResultList();
+    }
+
+
+
+
 }
