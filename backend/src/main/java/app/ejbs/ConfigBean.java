@@ -91,7 +91,8 @@ public class ConfigBean {
                 ratingBean.create(javaPublicacaoId, "colab", 5);
                 ratingBean.create(javaPublicacaoId, "resp", 4);
 
-
+                tagBean.subscribeTags("colab", Arrays.asList("Java"));
+                tagBean.subscribeTags("resp", Arrays.asList("AI"));
 
             }
 

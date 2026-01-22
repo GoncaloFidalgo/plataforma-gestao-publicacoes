@@ -39,7 +39,7 @@ public class CommentBean {
         em.persist(comment);
         em.flush();
 
-        // Criar notificações para usuários que seguem as tags da publicação
+        // Criar notificações para utilizadores que seguem as tags da publicação
         if (publicacao.getTags() != null && !publicacao.getTags().isEmpty()) {
             for (Tag tag : publicacao.getTags()) {
                 try {
