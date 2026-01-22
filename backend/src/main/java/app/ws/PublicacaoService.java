@@ -26,14 +26,18 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import java.util.logging.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.stream.Collectors;
-
+import app.ejbs.OllamaBean;
 @Path("publications")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -45,8 +49,14 @@ public class PublicacaoService {
     @EJB private RatingBean ratingBean;
     @EJB private CommentBean commentBean;
 
+    @EJB
+    private OllamaBean ollamaBean;
+
     @Context
     private SecurityContext securityContext;
+
+    private static final Logger logger = Logger.getLogger(PublicacaoService.class.getName());
+    private static final String UPLOAD_DIR = System.getProperty("java.io.tmpdir") + "/publications/";
 
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -265,6 +275,89 @@ public class PublicacaoService {
                 .collect(Collectors.toList());
         return Response.ok(history).build();
     }
+
+    @POST
+    @Path("{id}/resumir")
+    @RolesAllowed({"Administrator", "Responsavel", "Colaborador"})
+    public Response gerarResumoAutomatico(@PathParam("id") Long id) {
+        try {
+            Publicacao publicacao = publicacaoBean.find(id);
+            if (publicacao == null) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+
+            StringBuilder conteudoCompleto = new StringBuilder();
+            if (publicacao.getDescricao() != null) {
+                conteudoCompleto.append(publicacao.getDescricao()).append("\n");
+            }
+
+            if (publicacao.getFilename() != null && publicacao.getFilename().toLowerCase().endsWith(".pdf")) {
+                String pdfText = extractContentFromPdf(publicacao.getFilename());
+                if (pdfText != null && !pdfText.isBlank()) {
+                    conteudoCompleto.append("\n--- Excerto do PDF ---\n").append(pdfText);
+                }
+            }
+
+            String textoFinal = conteudoCompleto.toString();
+
+            if (textoFinal.isBlank()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("{\"mensagem\": \"Não há conteúdo suficiente (descrição ou PDF) para gerar um resumo.\"}")
+                        .build();
+            }
+
+            String resumoGerado = ollamaBean.generateSummary(publicacao.getTitulo(), textoFinal);
+
+            publicacaoBean.updateResumo(id, resumoGerado);
+
+            return Response.ok()
+                    .entity("{\"resumo\": \"" + resumoGerado.replace("\"", "\\\"").replace("\n", " ") + "\"}")
+                    .build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"mensagem\": \"Erro ao processar resumo: " + e.getMessage() + "\"}")
+                    .build();
+        }
+    }
+
+    /**
+     * Método auxiliar para extrair texto do PDF
+     */
+    private String extractContentFromPdf(String filename) {
+        try {
+            java.nio.file.Path filePath = Paths.get(UPLOAD_DIR, filename);
+            File file = filePath.toFile();
+
+            if (!file.exists()) {
+                logger.warning("Ficheiro PDF não encontrado para resumo: " + filename);
+                return null;
+            }
+
+            try (PDDocument document = PDDocument.load(file)) {
+                PDFTextStripper stripper = new PDFTextStripper();
+
+
+                stripper.setStartPage(1);
+                stripper.setEndPage(5);
+
+                String text = stripper.getText(document);
+
+                if (text.length() > 4000) {
+                    text = text.substring(0, 4000) + "... [texto truncado]";
+                }
+                return text;
+            }
+        } catch (IOException e) {
+            logger.severe("Erro ao ler PDF (" + filename + "): " + e.getMessage());
+            return null;
+        }
+    }
+
+
+
+
 
    /* @PUT
     @Path("/{id}")
