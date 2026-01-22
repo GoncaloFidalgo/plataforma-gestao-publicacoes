@@ -125,6 +125,11 @@ const mainLinks = computed<NavigationMenuItem[]>(() => [
     to: '/publications'
   },
   {
+    label: 'Tags',
+    icon: 'i-heroicons-tag',
+    to: '/tags'
+  },
+  {
     label: 'Upload New',
     icon: 'i-heroicons-cloud-arrow-up',
     to: '/publications/create'
@@ -137,9 +142,9 @@ const managementLinks = computed<NavigationMenuItem[]>(() => {
 
   if (authStore.isAdmin || authStore.isResponsavel) {
     links.push({
-      label: 'Tags',
+      label: 'Tags Managment',
       icon: 'i-heroicons-tag',
-      to: '/tags'
+      to: '/tags/managment'
     })
     links.push({
       label: 'Pub Types',
@@ -173,6 +178,12 @@ const managementLinks = computed<NavigationMenuItem[]>(() => {
     label: 'My Comments',
     icon: 'i-heroicons-chat-bubble-left-right',
     to: '/me/comments'      
+  })
+
+  links.push({
+    label: 'My Tags',
+    icon: 'i-heroicons-tag',
+    to: '/me/tags'      
   })
 
   return links

@@ -23,7 +23,6 @@ export const usePublicationStore = defineStore('publications', () => {
         try {
             const data = await apiStore.getPublicationsByUser(username)
             publications.value = data || []
-                        console.log("data",publications.value)
             return publications.value
         } catch (error) {
             console.error('Error fetching user publications:', error)
@@ -41,8 +40,6 @@ export const usePublicationStore = defineStore('publications', () => {
         try {
             const data = await apiStore.getMyPublications()
             publications.value = Array.isArray(data) ? data : []
-            console.log(data)
-            console.log(publications.value)
             return publications.value
         } catch (e) {
             error.value = e
@@ -92,8 +89,8 @@ export const usePublicationStore = defineStore('publications', () => {
         // 1. Construct Metadata JSON
         const metadata = {
             titulo: form.titulo,
-            tipo: form.tipo,
-            area_cientifica: form.areaCientifica,
+            tipoId: form.tipo,
+            areaId: form.areaCientifica,
             descricao: form.descricao,
             autores: Array.isArray(form.autores) ? form.autores : [],
             tags: form.tags,
