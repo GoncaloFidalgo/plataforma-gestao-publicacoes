@@ -25,7 +25,7 @@
           <UFormField label="Type" name="tipo" required>
             <USelectMenu
                 v-model="state.tipo"
-                :options="['Article', 'Thesis', 'Tutorial', 'Book', 'Report']"
+                :items="typeOptions"
                 placeholder="Select type"
                 class="w-full"
             />
@@ -33,7 +33,12 @@
 
           <!-- Scientific Area -->
           <UFormField label="Scientific Area" name="areaCientifica" required>
-            <UInput v-model="state.areaCientifica" placeholder="e.g. Computer Science" class="w-full" />
+            <USelectMenu
+                v-model="state.areaCientifica"
+                :items="areaOptions"
+                placeholder="Select area"
+                class="w-full"
+            />
           </UFormField>
         </div>
 
@@ -41,7 +46,7 @@
         <UFormField label="Tags" name="tags">
           <USelectMenu
               v-model="state.tags"
-              :options="tagOptions"
+              :items="tagOptions"
               placeholder="Select tags"
               multiple
               searchable
@@ -94,6 +99,7 @@ import { z } from 'zod'
 
 const pubStore = usePublicationStore()
 const tagStore = useTagStore()
+const referenceStore = useReferenceStore()
 const toast = useToast()
 
 
@@ -112,12 +118,24 @@ const state = reactive({
   file: null
 })
 
-const tagOptions = computed(() => tagStore.tags.map(t => t.name))
+const tagOptions = computed(() => {
+  return tagStore.tags
+      .filter(t => !t.hidden)
+      .map(t => t.name)
+})
+const typeOptions = computed(() => {
+  return referenceStore.types
+      .map(t => t.name)
+})
+const areaOptions = computed(() => {
+  return referenceStore.areas
+      .map(t => t.name)
+})
 
 onMounted(() => {
-  if (tagStore.tags.length === 0) {
-    tagStore.fetchTags()
-  }
+ tagStore.fetchTags()
+referenceStore.fetchTypes()
+  referenceStore.fetchAreas()
 })
 
 const schema = z.object({
