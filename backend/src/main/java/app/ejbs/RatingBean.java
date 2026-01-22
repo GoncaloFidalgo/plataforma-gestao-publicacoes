@@ -2,9 +2,11 @@ package app.ejbs;
 
 import app.entities.Publicacao;
 import app.entities.Rating;
+import app.entities.Tag;
 import app.entities.User;
 import app.exceptions.MyEntityExistsException;
 import app.exceptions.MyEntityNotFoundException;
+import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
@@ -17,6 +19,9 @@ public class RatingBean {
 
     @PersistenceContext
     private EntityManager em;
+
+    @EJB
+    private EmailBean emailBean;
 
     public double create(Long publicacaoId, String username, int value) throws MyEntityNotFoundException, MyEntityExistsException {
         User user = em.find(User.class, username);

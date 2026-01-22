@@ -2,8 +2,10 @@ package app.ejbs;
 
 import app.entities.Comment;
 import app.entities.Publicacao;
+import app.entities.Tag;
 import app.entities.User;
 import app.exceptions.MyEntityNotFoundException;
+import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -14,6 +16,15 @@ public class CommentBean {
 
     @PersistenceContext
     private EntityManager em;
+
+    @EJB
+    private NotificationBean notificationBean;
+
+    @EJB
+    private TagBean tagBean;
+
+    @EJB
+    private EmailBean emailBean;
 
     public Comment create(Long publicacaoId, String username, String text) throws MyEntityNotFoundException {
         User user = em.find(User.class, username);
@@ -27,6 +38,32 @@ public class CommentBean {
 
         em.persist(comment);
         em.flush();
+
+        // Criar notificações para usuários que seguem as tags da publicação
+        if (publicacao.getTags() != null && !publicacao.getTags().isEmpty()) {
+            for (Tag tag : publicacao.getTags()) {
+                try {
+                    Tag tagWithSubscribers = tagBean.find(tag.getName());
+
+                    for (User follower : tagWithSubscribers.getSubscribers()) {
+                        // Não notificar o próprio autor do comentário
+                        if (!follower.getUsername().equals(username)) {
+                            String message = String.format(
+                                    "%s comentou na publicação '%s' que segue a tag '%s'",
+                                    user.getUsername(),
+                                    publicacao.getTitulo(),
+                                    tag.getName()
+                            );
+
+                            notificationBean.createNotification(message, follower, publicacao, comment);
+                        }
+                    }
+                } catch (MyEntityNotFoundException e) {
+                    // Tag não encontrada, continuar com as próximas
+                }
+            }
+        }
+
         return comment;
     }
 

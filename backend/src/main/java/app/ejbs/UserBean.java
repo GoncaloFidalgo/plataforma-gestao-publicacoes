@@ -9,10 +9,13 @@ import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import jakarta.validation.ConstraintViolationException;
 import org.hibernate.Hibernate;
+import app.dtos.ActivityDTO;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Stateless
@@ -215,7 +218,17 @@ public class UserBean {
     }
 
     public List<User> findAll() {
-        return entityManager.createNamedQuery("getAllUsers", User.class).getResultList();
+        List<User> users = entityManager.createNamedQuery("getAllUsers", User.class).getResultList();
+
+        // Forçar inicialização das coleções
+        for (User user : users) {
+            Hibernate.initialize(user.getPublicacoes());
+            Hibernate.initialize(user.getComentarios());
+            Hibernate.initialize(user.getRatings());
+            Hibernate.initialize(user.getTagsSubscritas());
+        }
+
+        return users;
     }
 
     public List<Administrator> findAllAdministrators() {
@@ -228,5 +241,84 @@ public class UserBean {
 
     public List<Colaborador> findAllColaboradores() {
         return entityManager.createNamedQuery("getAllColaboradores", Colaborador.class).getResultList();
+    }
+
+    public List<ActivityDTO> getUserActivity(String username) throws MyEntityNotFoundException {
+        User user = find(username);
+        List<ActivityDTO> activities = new ArrayList<>();
+
+        // Uploads (publicações criadas)
+        for (Publicacao pub : user.getPublicacoes()) {
+            ActivityDTO dto = new ActivityDTO();
+            dto.setId(pub.getId());
+            dto.setTipo("upload");
+            dto.setDescricao("Upload de publicação '" + pub.getTitulo() + "'");
+            dto.setPublicacaoId(pub.getId());
+            dto.setData(pub.getCreatedAt());
+            activities.add(dto);
+        }
+
+        // Edições
+        TypedQuery<HistoricoEdicao> queryEdicoes = entityManager.createQuery(
+                "SELECT h FROM HistoricoEdicao h WHERE h.editor.username = :username ORDER BY h.modifiedAt DESC",
+                HistoricoEdicao.class
+        );
+        queryEdicoes.setParameter("username", username);
+        List<HistoricoEdicao> edicoes = queryEdicoes.getResultList();
+
+        for (HistoricoEdicao hist : edicoes) {
+            ActivityDTO dto = new ActivityDTO();
+            dto.setId(hist.getId());
+            dto.setTipo("edicao");
+            dto.setDescricao(hist.getDescription());
+            dto.setPublicacaoId(hist.getPublicacao().getId());
+            dto.setData(hist.getModifiedAt());
+
+            // Parsear os campos editados da descrição
+            List<String> camposEditados = parseEditedFields(hist.getDescription());
+            dto.setCamposEditados(camposEditados);
+
+            activities.add(dto);
+        }
+
+        // Comentários
+        for (Comment comment : user.getComentarios()) {
+            ActivityDTO dto = new ActivityDTO();
+            dto.setId(comment.getId());
+            dto.setTipo("comentario");
+            dto.setDescricao("Comentou '" + comment.getText() + "'");
+            dto.setPublicacaoId(comment.getPublicacao().getId());
+            dto.setComentarioId(comment.getId());
+            dto.setData(comment.getCreatedAt());
+            activities.add(dto);
+        }
+
+        // Ratings
+        for (Rating rating : user.getRatings()) {
+            ActivityDTO dto = new ActivityDTO();
+            dto.setId(rating.getId());
+            dto.setTipo("rating");
+            dto.setDescricao("Deu rating " + rating.getValue() + " à publicação '" + rating.getPublicacao().getTitulo() + "'");
+            dto.setPublicacaoId(rating.getPublicacao().getId());
+            dto.setRating(rating.getValue());
+            dto.setData(rating.getPublicacao().getCreatedAt());
+            activities.add(dto);
+        }
+
+        activities.sort((a, b) -> b.getData().compareTo(a.getData()));
+        return activities;
+    }
+
+    private List<String> parseEditedFields(String description) {
+        List<String> campos = new ArrayList<>();
+        if (description != null && description.contains("Changed")) {
+            // Exemplo: "Changed title from X to Y"
+            if (description.contains("title")) campos.add("título");
+            if (description.contains("description")) campos.add("descrição");
+            if (description.contains("resumo")) campos.add("resumo");
+            if (description.contains("tags")) campos.add("tags");
+            if (description.contains("area")) campos.add("área científica");
+        }
+        return campos;
     }
 }

@@ -59,7 +59,6 @@ public class TagBean {
         return tag;
     }
 
-
     public void update(String name, String description, String scientificArea, Boolean hidden) throws MyEntityNotFoundException {
         Tag tag = find(name);
 

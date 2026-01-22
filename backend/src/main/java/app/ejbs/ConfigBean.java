@@ -1,9 +1,6 @@
 package app.ejbs;
 
-import app.entities.Administrator;
-import app.entities.PublicationType;
-import app.entities.ScientificArea;
-import app.entities.User;
+import app.entities.*;
 import app.exceptions.MyConstraintViolationException;
 import app.exceptions.MyEntityExistsException;
 import app.exceptions.MyEntityNotFoundException;
@@ -93,6 +90,9 @@ public class ConfigBean {
 
                 ratingBean.create(javaPublicacaoId, "colab", 5);
                 ratingBean.create(javaPublicacaoId, "resp", 4);
+
+
+
             }
 
 

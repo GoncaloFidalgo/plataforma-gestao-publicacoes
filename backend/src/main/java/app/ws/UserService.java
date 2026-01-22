@@ -20,6 +20,7 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import app.dtos.ActivityDTO;
 
 import java.util.List;
 
@@ -110,6 +111,24 @@ public class UserService {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"mensagem\": \"Erro ao obter ratings do utilizador\"}")
                 .build();
+        }
+    }
+
+    @GET
+    @Path("/{username}/activity")
+    @RolesAllowed({"Administrator", "Responsavel"})
+    public Response getUserActivity(@PathParam("username") String username) {
+        try {
+            List<ActivityDTO> activities = userBean.getUserActivity(username);
+            return Response.ok(activities).build();
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("{\"mensagem\": \"" + e.getMessage() + "\"}")
+                    .build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"mensagem\": \"Erro ao obter atividade do utilizador\"}")
+                    .build();
         }
     }
     //endregion
