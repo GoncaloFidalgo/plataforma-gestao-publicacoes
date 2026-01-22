@@ -110,8 +110,8 @@ const fileInput = ref(null)
 
 const state = reactive({
   titulo: '',
-  tipo: '',
-  areaCientifica: '',
+  tipo: null,
+  areaCientifica: null,
   descricao: '',
   tags: [],
   hidden: false,
@@ -123,15 +123,23 @@ const tagOptions = computed(() => {
       .filter(t => !t.hidden)
       .map(t => t.name)
 })
+
 const typeOptions = computed(() => {
   return referenceStore.types
-      .map(t => t.name)
+      .map(t => ({
+        label: t.name,
+        value: t.id,
+      }))
 })
 const areaOptions = computed(() => {
   return referenceStore.areas
-      .map(t => t.name)
+      .map(t => ({
+        label: t.name,
+        value: t.id,
+      }))
 })
 
+console.log(typeOptions)
 onMounted(() => {
  tagStore.fetchTags()
 referenceStore.fetchTypes()
@@ -140,8 +148,8 @@ referenceStore.fetchTypes()
 
 const schema = z.object({
   titulo: z.string().min(3, 'Title must be at least 3 characters'),
-  tipo: z.string().min(1, 'Type is required'),
-  areaCientifica: z.string().min(1, 'Scientific area is required'),
+  tipo: z.any().refine(val => val && val.value, 'Type is required'),
+  areaCientifica: z.any().refine(val => val && val.value, 'Scientific area is required'),
   descricao: z.string().min(10, 'Description must be at least 10 characters')
 })
 
@@ -184,6 +192,8 @@ const handleSubmit = async () => {
 
     await pubStore.create({
       ...state,
+      tipo: state.tipo.value,
+      areaCientifica: state.areaCientifica.value,
       autores: []
     })
 
@@ -191,6 +201,7 @@ const handleSubmit = async () => {
     await navigateTo('/publications')
 
   } catch (error) {
+    console.log(error)
     const msg = error.response?.data?.mensagem || error.response?.data || 'Failed to upload'
     toast.add({ title: 'Error', description: msg, color: 'red' })
   } finally {

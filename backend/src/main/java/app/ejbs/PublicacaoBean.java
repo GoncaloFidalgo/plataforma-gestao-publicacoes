@@ -71,7 +71,16 @@ public class PublicacaoBean {
                     }
                 }
             }
-
+            if (tagNames != null && !tagNames.isEmpty()) {
+                List<Tag> tagsToSet = new ArrayList<>();
+                for (String tagName : tagNames) {
+                    Tag tag = entityManager.find(Tag.class, tagName);
+                    if (tag != null) {
+                        tagsToSet.add(tag);
+                    }
+                }
+                publicacao.setTags(tagsToSet);
+            }
             // Notificar subscritores das tags sobre a nova publicação
             if (tagNames != null) {
                 for (String tagName : tagNames) {
