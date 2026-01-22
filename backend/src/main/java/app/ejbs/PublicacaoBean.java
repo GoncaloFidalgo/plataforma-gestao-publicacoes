@@ -3,6 +3,7 @@ package app.ejbs;
 import app.entities.*;
 import app.exceptions.MyConstraintViolationException;
 import app.exceptions.MyEntityNotFoundException;
+import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
@@ -25,6 +26,9 @@ public class PublicacaoBean {
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    @EJB
+    private EmailBean emailBean;
 
     private static final String UPLOAD_DIR = System.getProperty("java.io.tmpdir") + "/publications/";
 
@@ -68,16 +72,23 @@ public class PublicacaoBean {
                 }
             }
 
-            if (tagNames != null && !tagNames.isEmpty()) {
-                List<Tag> tagsToSet = new ArrayList<>();
+            // Notificar subscritores das tags sobre a nova publicação
+            if (tagNames != null) {
                 for (String tagName : tagNames) {
                     Tag tag = entityManager.find(Tag.class, tagName);
-                    if (tag != null) {
-                        tagsToSet.add(tag);
+                    if (tag != null && !tag.getSubscribers().isEmpty()) {
+                        emailBean.notifyTagSubscribers(
+                                tag.getSubscribers(),
+                                tag.getName(),
+                                "Nova publicação",
+                                publicacao.getTitulo(),
+                                publicacao.getId()
+                        );
                     }
                 }
-                publicacao.setTags(tagsToSet);
             }
+
+
             entityManager.persist(publicacao);
             return publicacao;
         } catch (ConstraintViolationException e) {
@@ -149,7 +160,7 @@ public class PublicacaoBean {
         return results;
     }
 
-    public Publicacao update(Long id, String titulo,   Long tipoId, String autorUsernameToAdd, Long areaId, String descricao, String resumo, List<String> tagNames, Boolean hidden, String editorUsername) throws MyEntityNotFoundException {
+    public Publicacao update(Long id, String titulo, Long tipoId, String autorUsernameToAdd, Long areaId, String descricao, String resumo, List<String> tagNames, Boolean hidden, String editorUsername) throws MyEntityNotFoundException {
         var publicacao = entityManager.find(Publicacao.class, id);
         if (publicacao == null) return null;
 
@@ -196,6 +207,19 @@ public class PublicacaoBean {
         HistoricoEdicao history = new HistoricoEdicao("Update details", editor, publicacao);
         publicacao.getHistoricoEdicoes().add(history);
         entityManager.persist(history);
+
+        // Notificar subscritores de todas as tags existentes sobre a edição
+        for (Tag tag : publicacao.getTags()) {
+            if (!tag.getSubscribers().isEmpty()) {
+                emailBean.notifyTagSubscribers(
+                        tag.getSubscribers(),
+                        tag.getName(),
+                        "Publicação editada",
+                        publicacao.getTitulo(),
+                        publicacao.getId()
+                );
+            }
+        }
 
         // Para guardar as alterações
         entityManager.flush();

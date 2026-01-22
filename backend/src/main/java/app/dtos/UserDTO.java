@@ -1,10 +1,12 @@
 package app.dtos;
 
+import app.dtos.publication.PublicacaoDTO;
 import app.entities.User;
 import org.hibernate.Hibernate;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class UserDTO implements Serializable {
@@ -33,16 +35,43 @@ public class UserDTO implements Serializable {
         this.roleType = roleType;
     }
 
-    public static UserDTO from(User user) {
-        return new UserDTO(
-                user.getUsername(),
-                user.getName(),
-                user.getEmail(),
-                getRoleNumber(user),
-                user.getActive(),
-                Hibernate.getClass(user).getSimpleName()
-        );
-    }
+  public static UserDTO from(User user) {
+      UserDTO dto = new UserDTO(
+          user.getUsername(),
+          user.getName(),
+          user.getEmail(),
+          getRoleNumber(user),
+          user.getActive(),
+          Hibernate.getClass(user).getSimpleName()
+      );
+
+      // Popular as listas se existirem no User
+      if (Hibernate.isInitialized(user.getPublicacoes())) {
+          dto.setPublicacoes(user.getPublicacoes().stream()
+              .map(pub -> pub.getTitulo())
+              .collect(Collectors.toList()));
+      }
+
+      if (Hibernate.isInitialized(user.getComentarios())) {
+          dto.setComentarios(user.getComentarios().stream()
+              .map(com -> com.getText())
+              .collect(Collectors.toList()));
+      }
+
+      if (Hibernate.isInitialized(user.getRatings())) {
+          dto.setRatings(user.getRatings().stream()
+              .map(rat -> Map.of("value ", rat.getValue(),"publicacao", rat.getPublicacao().getTitulo()))
+              .collect(Collectors.toList()));
+      }
+
+     /*if (Hibernate.isInitialized(user.getTags_subscritas())) {
+          dto.setTags_subscritas(user.getTags_subscritas().stream()
+              .map(tag -> )
+             .collect(Collectors.toList()));
+      }*/
+
+      return dto;
+  }
 
     private static Integer getRoleNumber(User user) {
         String role = Hibernate.getClass(user).getSimpleName();

@@ -1,9 +1,6 @@
 package app.ejbs;
 
-import app.entities.Administrator;
-import app.entities.PublicationType;
-import app.entities.ScientificArea;
-import app.entities.User;
+import app.entities.*;
 import app.exceptions.MyConstraintViolationException;
 import app.exceptions.MyEntityExistsException;
 import app.exceptions.MyEntityNotFoundException;
@@ -32,6 +29,9 @@ public class ConfigBean {
     @EJB private TagBean tagBean;
     @EJB private PublicacaoBean publicacaoBean;
     @EJB private ReferenceBean referenceBean;
+    @EJB private CommentBean commentBean;
+    @EJB private RatingBean ratingBean;
+
 
     private static final Logger logger = Logger.getLogger(ConfigBean.class.getName());
 
@@ -83,6 +83,21 @@ public class ConfigBean {
                 );
             }
 
+            Long javaPublicacaoId = publicacaoBean.findAll(null, "Introduction to Java", null, null, null, null).get(0).getId();
+            if (commentBean.findAll(javaPublicacaoId, null).isEmpty()) {
+                commentBean.create(javaPublicacaoId, "colab", "Great tutorial! Very helpful for beginners.");
+                commentBean.create(javaPublicacaoId, "resp", "Well structured content.");
+
+                ratingBean.create(javaPublicacaoId, "colab", 5);
+                ratingBean.create(javaPublicacaoId, "resp", 4);
+
+
+
+            }
+
+
+
+
         } catch (Exception e) {
             logger.severe("ConfigBean Error: " + e.getMessage());
         }
@@ -106,4 +121,6 @@ public class ConfigBean {
         em.persist(a);
         return a;
     }
+
+
 }

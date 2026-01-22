@@ -1,11 +1,13 @@
 package app.ws;
 
+import app.dtos.ActivityDTO;
 import app.dtos.UserDTO;
 import app.dtos.publication.PublicacaoDTO;
 import app.ejbs.PublicacaoBean;
 import app.ejbs.UserBean;
 import app.entities.Publicacao;
 import app.exceptions.MyConstraintViolationException;
+import app.exceptions.MyEntityNotFoundException;
 import app.security.Authenticated;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.EJB;
@@ -41,7 +43,6 @@ public class MeService {
     @Context
     private SecurityContext securityContext;
 
-
     @GET
     @Authenticated
     @Path("/")
@@ -51,6 +52,28 @@ public class MeService {
         return Response.ok(UserDTO.from(user)).build();
     }
 
+
+    @GET
+    @Path("/activity")
+    @RolesAllowed({"Administrator", "Responsavel", "Colaborador"})
+    public Response getMyActivity(@Context SecurityContext securityContext) {
+        try {
+            String username = securityContext.getUserPrincipal().getName();
+            List<ActivityDTO> activities = userBean.getUserActivity(username);
+            return Response.ok(activities).build();
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("{\"mensagem\": \"" + e.getMessage() + "\"}")
+                    .build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"mensagem\": \"Erro ao obter atividade pessoal\"}")
+                    .build();
+        }
+    }
+    //endregion
+
+    //region Put
     @PUT
     @Path("/")
     @Authenticated
