@@ -26,14 +26,18 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import java.util.logging.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.stream.Collectors;
-
+import app.ejbs.OllamaBean;
 @Path("publications")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -45,8 +49,14 @@ public class PublicacaoService {
     @EJB private RatingBean ratingBean;
     @EJB private CommentBean commentBean;
 
+    @EJB
+    private OllamaBean ollamaBean;
+
     @Context
     private SecurityContext securityContext;
+
+    private static final Logger logger = Logger.getLogger(PublicacaoService.class.getName());
+    private static final String UPLOAD_DIR = System.getProperty("java.io.tmpdir") + "/publications/";
 
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -157,6 +167,101 @@ public class PublicacaoService {
         int i = filename.lastIndexOf('.');
         return (i > 0) ? filename.substring(i) : "";
     }
+    @PUT
+    @Path("{id}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @RolesAllowed({"Colaborador", "Responsavel", "Administrator"})
+    public Response update(@PathParam("id") Long id, MultipartFormDataInput input) {
+        try {
+            Publicacao existing = publicacaoBean.find(id);
+            if (existing == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+            String currentUser = securityContext.getUserPrincipal().getName();
+            boolean isOwner = existing.getCreatedBy().getUsername().equals(currentUser);
+            boolean isAdminOrResp = securityContext.isUserInRole("Administrator") || securityContext.isUserInRole("Responsavel");
+
+            if (!isOwner && !isAdminOrResp) {
+                return Response.status(Response.Status.FORBIDDEN).entity("You can only edit your own publications.").build();
+            }
+
+            Map<String, List<InputPart>> form = input.getFormDataMap();
+
+            // 1. Metadata
+            List<InputPart> metaParts = form.get("metadata");
+            if (metaParts == null || metaParts.isEmpty()) return Response.status(Response.Status.BAD_REQUEST).entity("metadata missing").build();
+
+            String metaJson = metaParts.get(0).getBodyAsString();
+            ObjectMapper mapper = new ObjectMapper();
+            PublicacaoCreateDTO dto = mapper.readValue(metaJson, PublicacaoCreateDTO.class);
+
+            // 2. File
+            InputStream fileStream = null;
+            String extension = null;
+
+            List<InputPart> fileParts = form.get("file");
+            if (fileParts != null && !fileParts.isEmpty()) {
+                InputPart part = fileParts.get(0);
+                String fileName = getFileName(part.getHeaders());
+                extension = getExtension(fileName);
+                fileStream = part.getBody(InputStream.class, null);
+
+                if (!extension.equalsIgnoreCase(".pdf") && !extension.equalsIgnoreCase(".zip")) {
+                    return Response.status(Response.Status.BAD_REQUEST).entity("File must be PDF or ZIP").build();
+                }
+            }
+
+            // 3. Update in Bean
+            Publicacao updated = publicacaoBean.update(
+                    id,
+                    dto.getTitulo(),
+                    dto.getTipoId(),
+                    dto.getAreaId(),
+                    dto.getDescricao(),
+                    dto.getAutores(),
+                    dto.getTags(),
+                    dto.getHidden(),
+                    fileStream,
+                    extension,
+                    currentUser
+            );
+
+            return Response.ok(PublicacaoDTO.from(updated)).build();
+
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error updating publication").build();
+        }
+    }
+
+    // --- NEW: Delete Publicacao ---
+    @DELETE
+    @Path("{id}")
+    @RolesAllowed({"Colaborador", "Responsavel", "Administrator"})
+    public Response delete(@PathParam("id") Long id) {
+        try {
+            Publicacao existing = publicacaoBean.find(id);
+            if (existing == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+            String currentUser = securityContext.getUserPrincipal().getName();
+            boolean isOwner = existing.getCreatedBy().getUsername().equals(currentUser);
+            boolean isAdminOrResp = securityContext.isUserInRole("Administrator") || securityContext.isUserInRole("Responsavel");
+
+            if (!isOwner && !isAdminOrResp) {
+                return Response.status(Response.Status.FORBIDDEN).entity("You can only delete your own publications.").build();
+            }
+
+            publicacaoBean.delete(id);
+            return Response.ok("{\"mensagem\": \"Publicação removida com sucesso\"}").build();
+
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error deleting publication").build();
+        }
+    }
 
 
     @GET
@@ -266,76 +371,89 @@ public class PublicacaoService {
         return Response.ok(history).build();
     }
 
-   /* @PUT
-    @Path("/{id}")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response updatePublication(@PathParam("id") Long id, Map<String, Object> payload) {
+    @POST
+    @Path("{id}/resumir")
+    @RolesAllowed({"Administrator", "Responsavel", "Colaborador"})
+    public Response gerarResumoAutomatico(@PathParam("id") Long id) {
         try {
-            String titulo = (String) payload.get("titulo");
-            String areaCientifica = (String) payload.get("area_cientifica");
-            String descricao = (String) payload.get("descricao");
-            String resumo = (String) payload.get("resumo");
-            String tags = (String) payload.get("tags"); // Expecting "Tag1, Tag2"
-            Boolean hidden = payload.get("hidden") != null ? (Boolean) payload.get("hidden") : null;
-
-            String editorUsername = securityContext.getUserPrincipal().getName();
-
-            // Handle 'autor' legacy logic if needed (omitted for brevity, keep your original if needed)
-            String autor = (String) payload.get("autor");
-
-            var publicacao = publicacaoBean.update(
-                    id,
-                    titulo,
-                    autor,
-                    areaCientifica,
-                    descricao,
-                    resumo,
-                    tags,
-                    hidden,
-                    editorUsername // Pass current user for History
-            );
-
+            Publicacao publicacao = publicacaoBean.find(id);
             if (publicacao == null) {
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity("{\"mensagem\": \"Publicação não encontrada\"}")
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+
+            StringBuilder conteudoCompleto = new StringBuilder();
+            if (publicacao.getDescricao() != null) {
+                conteudoCompleto.append(publicacao.getDescricao()).append("\n");
+            }
+
+            if (publicacao.getFilename() != null && publicacao.getFilename().toLowerCase().endsWith(".pdf")) {
+                String pdfText = extractContentFromPdf(publicacao.getFilename());
+                if (pdfText != null && !pdfText.isBlank()) {
+                    conteudoCompleto.append("\n--- Excerto do PDF ---\n").append(pdfText);
+                }
+            }
+
+            String textoFinal = conteudoCompleto.toString();
+
+            if (textoFinal.isBlank()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("{\"mensagem\": \"Não há conteúdo suficiente (descrição ou PDF) para gerar um resumo.\"}")
                         .build();
             }
 
-            return Response.ok(PublicacaoDTO.from(publicacao)).build();
+            String resumoGerado = ollamaBean.generateSummary(publicacao.getTitulo(), textoFinal);
+
+            publicacaoBean.updateResumo(id, resumoGerado);
+
+            return Response.ok()
+                    .entity("{\"resumo\": \"" + resumoGerado.replace("\"", "\\\"").replace("\n", " ") + "\"}")
+                    .build();
 
         } catch (Exception e) {
             e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"mensagem\": \"Erro ao processar o pedido\"}")
+                    .entity("{\"mensagem\": \"Erro ao processar resumo: " + e.getMessage() + "\"}")
                     .build();
         }
-    }*/
+    }
 
-   /* @DELETE
-    @Path("/{id}")
-    public Response delete(@PathParam("id") Long id) {
-        var publicacao = publicacaoBean.find(id);
-        if (publicacao == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-
+    /**
+     * Método auxiliar para extrair texto do PDF
+     */
+    private String extractContentFromPdf(String filename) {
         try {
-            publicacaoBean.delete(id);
+            java.nio.file.Path filePath = Paths.get(UPLOAD_DIR, filename);
+            File file = filePath.toFile();
 
-            if (publicacao.getFile() != null && !publicacao.getFile().isBlank()) {
-                java.nio.file.Path filePath = java.nio.file.Paths.get(UPLOAD_DIR, publicacao.getFile());
-                java.nio.file.Files.deleteIfExists(filePath);
+            if (!file.exists()) {
+                logger.warning("Ficheiro PDF não encontrado para resumo: " + filename);
+                return null;
             }
 
-            return Response.status(Response.Status.NO_CONTENT).build();
+            try (PDDocument document = PDDocument.load(file)) {
+                PDFTextStripper stripper = new PDFTextStripper();
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"mensagem\": \"Erro ao apagar publicação\"}")
-                    .build();
+
+                stripper.setStartPage(1);
+                stripper.setEndPage(5);
+
+                String text = stripper.getText(document);
+
+                if (text.length() > 4000) {
+                    text = text.substring(0, 4000) + "... [texto truncado]";
+                }
+                return text;
+            }
+        } catch (IOException e) {
+            logger.severe("Erro ao ler PDF (" + filename + "): " + e.getMessage());
+            return null;
         }
-    }*/
+    }
+
+
+
+
+
 
    @GET
    @Path("{id}/ratings")

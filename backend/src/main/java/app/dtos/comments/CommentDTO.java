@@ -1,6 +1,8 @@
 package app.dtos.comments;
 
 import app.entities.Comment;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,6 +14,7 @@ public class CommentDTO implements Serializable {
     private String comment; // Maps to entity.text
     private String username;
     private String name;
+    @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDateTime date; // Maps to entity.createdAt
     private Boolean hidden;
     private String motive;

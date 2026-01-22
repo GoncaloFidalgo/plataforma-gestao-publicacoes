@@ -98,6 +98,15 @@ public class User extends Versionable implements Serializable {
     public Set<Tag> getTagsSubscritas() { return tagsSubscritas; }
     public void setTagsSubscritas(Set<Tag> tagsSubscritas) { this.tagsSubscritas = tagsSubscritas; }
 
+    @OneToMany(mappedBy = "createdBy")
+    private List<Publicacao> publicacoes;
+    public List<Publicacao> getPublicacoes() {
+        return publicacoes;
+    }
+    public void setPublicacoes(List<Publicacao> publicacoes) {
+        this.publicacoes = publicacoes;
+    }
+
     public User() {}
 
     public User(String username, String password, String name, String email) {
@@ -110,6 +119,7 @@ public class User extends Versionable implements Serializable {
         comments = new ArrayList<>();
         ratings = new ArrayList<>();
         tagsSubscritas = new HashSet<>();
+        publicacoes = new ArrayList<>();
     }
 
 }
