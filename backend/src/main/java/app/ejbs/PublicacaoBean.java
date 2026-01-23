@@ -275,15 +275,20 @@ public class PublicacaoBean {
         entityManager.remove(p);
     }
 
+
     public List<Publicacao> findPublicationsForUser(String username) {
-        return entityManager.createQuery("""
-                            SELECT DISTINCT p
-                            FROM Publicacao p 
-                            WHERE p.createdBy.username= :username
-                            ORDER BY p.createdAt DESC
-                        """, Publicacao.class)
+        List<Publicacao> results = entityManager.createQuery(
+                        "SELECT p FROM Publicacao p WHERE p.createdBy.username = :username ORDER BY p.createdAt DESC",
+                        Publicacao.class)
                 .setParameter("username", username)
                 .getResultList();
+
+        for (Publicacao p : results) {
+            Hibernate.initialize(p.getTags());
+            Hibernate.initialize(p.getAutores());
+            Hibernate.initialize(p.getRatings());
+        }
+        return results;
     }
 
 

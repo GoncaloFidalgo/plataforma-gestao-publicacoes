@@ -3,7 +3,7 @@ POST http://localhost:8080/academics/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "admin",
+  "username": "colab",
   "password": "123"
 }
 > {%
@@ -16,6 +16,10 @@ GET http://localhost:8080/academics/api/auth/user
 Accept: application/json
 Authorization: Bearer {{auth_token}}
 
+### Get authenticated user (replace <JWT_TOKEN> with the token returned above)
+GET http://localhost:8080/academics/api/users/me/publications
+Accept: application/json
+Authorization: Bearer {{auth_token}}
 
 ### Update User
 PUT http://localhost:8080/academics/api/users/me
