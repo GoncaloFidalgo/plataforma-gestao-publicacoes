@@ -85,7 +85,22 @@
         <template #createdAt-cell="{ row }">
           {{ new Date(row.original.createdAt).toLocaleDateString() }}
         </template>
-
+        <template #tags-cell="{ row }">
+          <div class="flex flex-wrap gap-1">
+            <UBadge
+                v-for="tag in row.original.tags.slice(0, 3)"
+                :key="tag"
+                color="primary"
+                variant="subtle"
+                size="md"
+            >
+              {{ tag }}
+            </UBadge>
+            <span v-if="row.original.tags.length > 3" class="text-xs text-gray-500 self-center">
+                +{{ row.original.tags.length - 3 }}
+              </span>
+          </div>
+        </template>
         <!-- Custom Cell: Actions -->
         <template #actions-cell="{ row }">
           <UTooltip text="Download File">
@@ -240,7 +255,7 @@
                   <div class="pt-2">
                     <dt class="text-gray-500 mb-1">Authors</dt>
                     <dd class="flex flex-wrap gap-1">
-                      <UBadge v-for="author in selectedPub?.autores" :key="author.username" color="gray" variant="subtle" size="sm">
+                      <UBadge v-for="author in selectedPub?.autores" :key="author.username" color="gray" variant="subtle" size="md">
                         {{ author.name }}
                       </UBadge>
                     </dd>
@@ -249,7 +264,7 @@
                   <div class="pt-1">
                     <dt class="text-gray-500 mb-1">Tags</dt>
                     <dd class="flex flex-wrap gap-1">
-                      <UBadge v-for="tag in selectedPub?.tags" :key="tag" color="primary" variant="subtle" size="sm">
+                      <UBadge v-for="tag in selectedPub?.tags" :key="tag" color="primary" variant="subtle" size="md">
                         {{ tag }}
                       </UBadge>
                     </dd>
@@ -259,6 +274,26 @@
                     <dt class="text-gray-500">Uploaded By</dt>
                     <dd class="text-gray-900 dark:text-white font-medium">
                       {{ selectedPub?.creatorName }}
+                    </dd>
+                  </div>
+
+                  <div class="pt-2 flex justify-between items-center">
+                    <dt class="text-gray-500">Visibility</dt>
+                    <dd class="text-gray-900 dark:text-white font-medium flex items-center gap-2">
+                      <UBadge :color="selectedPub?.hidden ? 'red' : 'green'" variant="subtle" size="md">
+                        {{ selectedPub?.hidden ? 'Hidden' : 'Visible' }}
+                      </UBadge>
+
+                      <UTooltip v-if="canToggleVisibility" :text="selectedPub?.hidden ? 'Make Visible' : 'Hide'">
+                        <UButton
+                            :icon="selectedPub?.hidden ? 'i-heroicons-eye' : 'i-heroicons-eye-slash'"
+                            size="md"
+                            color="gray"
+                            variant="ghost"
+                            @click="togglePubVisibility"
+                            :loading="visibilityUpdating"
+                        />
+                      </UTooltip>
                     </dd>
                   </div>
                 </dl>
@@ -446,6 +481,7 @@ const columns = [
   { accessorKey: 'titulo', header: 'Title' },
   { accessorKey: 'areaCientifica', header: 'Area' },
   { accessorKey: 'tipo', header: 'Category' },
+  { accessorKey: 'tags', header: 'Tags' },
   { accessorKey: 'ratingAverage', header: 'Rating' },
   { accessorKey: 'creatorName', header: 'Uploader' },
   { accessorKey: 'createdAt', header: 'Date' },
@@ -534,6 +570,29 @@ const tabs = [
 
 const userRatingValue = computed(() => userRatingObj.value ? userRatingObj.value.value : 0)
 const hoverRating = ref(0)
+
+const canToggleVisibility = computed(() => {
+  if (!selectedPub.value) return false
+  const isOwner = authStore.currentUser?.username === selectedPub.value.creatorUsername
+  return authStore.isAdmin || authStore.isResponsavel || isOwner
+})
+const togglePubVisibility = async () => {
+  if (!selectedPub.value) return
+  visibilityUpdating.value = true
+  try {
+    await pubStore.togglePublicationVisibility(selectedPub.value.id, selectedPub.value.hidden)
+
+    selectedPub.value.hidden = !selectedPub.value.hidden
+
+    const state = selectedPub.value.hidden ? 'Hidden' : 'Visible'
+    toast.add({ title: `Publication is now ${state}`, color: 'green' })
+
+  } catch (error) {
+    toast.add({ title: 'Error', description: 'Failed to update visibility', color: 'red' })
+  } finally {
+    visibilityUpdating.value = false
+  }
+}
 
 onMounted(() => {
   pubStore.fetchPublications()
@@ -766,7 +825,7 @@ const handleClearRating = async () => {
 const handleDownload = async (pub) => {
   if (!pub) return
   downloadingId.value = pub.id
-  
+
   try {
     await pubStore.downloadFile(pub.id, pub.titulo, pub.fileType)
     toast.add({ title: 'Download started', color: 'green' })

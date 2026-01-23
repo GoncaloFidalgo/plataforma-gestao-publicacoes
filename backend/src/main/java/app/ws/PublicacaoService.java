@@ -562,5 +562,36 @@ public class PublicacaoService {
         }
         return "unknown";
     }
+    @PATCH
+    @Path("{id}/visibility")
+    @RolesAllowed({"Colaborador", "Responsavel", "Administrator"})
+    public Response updateVisibility(@PathParam("id") Long id, Map<String, Boolean> payload) {
+        try {
+            Publicacao p = publicacaoBean.find(id);
+            if (p == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+            String currentUser = securityContext.getUserPrincipal().getName();
+            boolean isOwner = p.getCreatedBy().getUsername().equals(currentUser);
+            boolean isAdminOrResp = securityContext.isUserInRole("Administrator") || securityContext.isUserInRole("Responsavel");
+
+            if (!isOwner && !isAdminOrResp) {
+                return Response.status(Response.Status.FORBIDDEN).entity("You do not have permission to change this publication's visibility.").build();
+            }
+
+            if (!payload.containsKey("hidden")) {
+                return Response.status(Response.Status.BAD_REQUEST).entity("Field 'hidden' is required").build();
+            }
+
+            publicacaoBean.updateVisibility(id, payload.get("hidden"));
+            return Response.ok().entity("{\"mensagem\": \"Visibility updated successfully\"}").build();
+
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+        }
+    }
+
+
 }
 

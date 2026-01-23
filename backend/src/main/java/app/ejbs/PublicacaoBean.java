@@ -253,7 +253,12 @@ public class PublicacaoBean {
 
         return p;
     }
-
+    public void updateVisibility(Long id, boolean hidden) throws MyEntityNotFoundException {
+        Publicacao p = entityManager.find(Publicacao.class, id);
+        if (p == null) throw new MyEntityNotFoundException("Publicacao not found.");
+        p.setHidden(hidden);
+        entityManager.flush();
+    }
 
     public void delete(Long id) throws MyEntityNotFoundException {
         Publicacao p = entityManager.find(Publicacao.class, id);

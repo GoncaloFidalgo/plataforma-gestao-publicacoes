@@ -41,8 +41,10 @@
             <!-- GRID -->
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <UCard v-for="p in publications" :key="p.id" class="login-card">
+
                     <!-- Header -->
                     <template #header>
+
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <h2 class="font-bold text-gray-1200 dark:text-white truncate">
@@ -57,9 +59,10 @@
                                 </p>
                             </div>
 
-                            <UBadge color="primary" variant="soft">
-                                {{ p.tipo }}
+                            <UBadge color="primary" variant="subtle" size="md">
+                              {{ p.tipo }}
                             </UBadge>
+
                         </div>
                     </template>
 
@@ -100,6 +103,15 @@
                                     @click="handleDownload(p)" />
                             </UTooltip>
 
+                          <UTooltip text="Edit Publication">
+                            <UButton
+                                icon="i-heroicons-pencil-square"
+                                size="md"
+                                color="gray"
+                                variant="ghost"
+                                :to="`../publications/${p.id}/edit`"
+                            />
+                          </UTooltip>
                         </div>
                     </template>
                 </UCard>
