@@ -1,6 +1,8 @@
 package app.dtos.rating;
 
 import app.entities.Rating;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,6 +39,7 @@ public class UserRatingsResponseDTO implements Serializable {
         private Long publicacaoId;
         private String tituloPublicacao;
         private int rating;
+        @JsonFormat(pattern = "dd/MM/yyyy")
         private LocalDateTime data;
 
         public static RatingDetailDTO from(Rating r) {

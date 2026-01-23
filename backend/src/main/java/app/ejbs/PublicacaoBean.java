@@ -89,7 +89,6 @@ public class PublicacaoBean {
                                     tag.getName(),
                                     "Nova publicação",
                                     publicacao.getTitulo(),
-                                    publicacao.getId()
                             );
                         }
                     }
@@ -232,14 +231,14 @@ public class PublicacaoBean {
             // 3. Update entity reference
             p.setFilename(newFileName);
         }
+
         for (Tag tag : p.getTags()) {
             if (!tag.getSubscribers().isEmpty()) {
                 emailBean.notifyTagSubscribers(
-                        tag.getSubscribers(),
-                        tag.getName(),
-                        "Publicação editada",
-                        p.getTitulo(),
-                        p.getId()
+                    tag.getSubscribers(),
+                    tag.getName(),
+                    "Publicacao editada",
+                    p.getTitulo()
                 );
             }
         }

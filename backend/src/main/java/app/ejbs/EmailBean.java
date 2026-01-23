@@ -41,22 +41,43 @@ public class EmailBean {
         emailJob.start();
     }
 
-    public void notifyTagSubscribers(Set<User> subscribers, String tagName, String eventType, String publicationTitle, Long publicationId) {
-        String subject = String.format("Notificação: Nova atividade na tag '%s'", tagName);
+    public void notifyTagSubscribers(Set<User> subscribers, String tagName, String eventType, String publicationTitle) {
+        String subject = String.format("Notificacao: Nova atividade na tag '%s'", tagName);
 
         for (User subscriber : subscribers) {
             String text = String.format(
-                "Olá %s,\n\n" +
-                "Houve uma nova atividade na tag '%s' à qual está subscrito:\n\n" +
+                "Ola %s,\n\n" +
+                "Houve uma nova atividade na tag '%s' a qual esta subscrito:\n\n" +
                 "Tipo: %s\n" +
-                "Publicação: %s (ID: %d)\n\n" +
+                "Publicacao: %s \n\n" +
                 "Aceda ao sistema para mais detalhes.\n\n" +
                 "Cumprimentos,\nEquipa",
                 subscriber.getName(),
                 tagName,
                 eventType,
+                publicationTitle
+            );
+
+            send(subscriber.getEmail(), subject, text);
+        }
+    }
+
+    public void notifyTagSubscribersWithUrl(Set<User> subscribers, String tagName, String eventType, String publicationTitle, String publicationUrl) {
+        String subject = String.format("Notificacao: Nova atividade na tag '%s'", tagName);
+
+        for (User subscriber : subscribers) {
+            String text = String.format(
+                "Ola %s,\n\n" +
+                "Houve uma nova atividade na tag '%s' a qual esta subscrito:\n\n" +
+                "Tipo: %s\n" +
+                "Publicacao: %s\n\n" +
+                "Aceda a publicacao em: %s\n\n" +
+                "Cumprimentos,\nEquipa",
+                subscriber.getName(),
+                tagName,
+                eventType,
                 publicationTitle,
-                publicationId
+                publicationUrl
             );
 
             send(subscriber.getEmail(), subject, text);

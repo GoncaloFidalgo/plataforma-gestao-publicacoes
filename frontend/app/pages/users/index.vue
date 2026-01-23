@@ -91,6 +91,12 @@
                            :to="`/users/${row.original.username}/tags`"/>
                 </UTooltip>
 
+                <UTooltip text="Ver Atividade">
+                  <UButton icon="i-heroicons-chart-bar-square" size="md" class="icon-btn"
+                           :to="`/users/${row.original.username}/activity`"/>
+                </UTooltip>
+
+                
 
               </div>
             </template>

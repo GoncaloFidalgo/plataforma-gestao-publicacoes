@@ -38,6 +38,16 @@
           />
         </div>
 
+        <div v-if="personalLinks.length > 0" class="mt-4">
+          <div class="px-3 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Personal
+          </div>
+          <UNavigationMenu
+              :items="personalLinks"
+              orientation="vertical"
+          />
+        </div>
+
       </template>
 
       <!-- FOOTER: USER PROFILE -->
@@ -166,8 +176,13 @@ const managementLinks = computed<NavigationMenuItem[]>(() => {
       to: '/users'
     })
   }
+  return links
+})
 
 
+const personalLinks  = computed<NavigationMenuItem[]>(() => {
+  const links: NavigationMenuItem[] = []
+  
   links.push({
     label: 'My Publications',
     icon: 'i-heroicons-document-magnifying-glass',
@@ -179,11 +194,23 @@ const managementLinks = computed<NavigationMenuItem[]>(() => {
     icon: 'i-heroicons-chat-bubble-left-right',
     to: '/me/comments'      
   })
+  
+  links.push({
+    label: 'My Ratings',
+    icon: 'i-heroicons-star',
+    to: '/me/ratings'      
+  })
 
   links.push({
     label: 'My Tags',
     icon: 'i-heroicons-tag',
     to: '/me/tags'      
+  })
+
+    links.push({
+      label: 'My Activity',
+      icon: 'i-heroicons-chart-bar-square',
+      to: '/me/activity'
   })
 
   return links

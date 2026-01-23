@@ -206,6 +206,25 @@ export const useAPIStore = defineStore('api', () => {
         return axios.get(`${API_BASE_URL}/publications/${id}/comments`, { headers, params }).then(r => r.data)
     }
 
+    const getMyActivity = async () => {
+        const headers = authHeader()
+        if (!headers) return []
+
+        const { data } = await axios.get(`${API_BASE_URL}/users/me/activity`, { headers })
+        return data || []
+    }
+
+    const getUserActivity = async (id) => {
+        const headers = authHeader()
+        if (!headers) return []
+
+        const { data } = await axios.get(
+            `${API_BASE_URL}/users/${encodeURIComponent(id)}/activity`,
+            { headers }
+        )
+        return data || []
+    }
+
 
     //#endregion
     // --- REFERENCE DATA (Types & Areas) ---
@@ -284,6 +303,17 @@ export const useAPIStore = defineStore('api', () => {
         return axios.patch(`${API_BASE_URL}/publications/${pubId}/comments/${commentId}`, data, { headers })
     }
 
+    const getMyRatings = async () => {
+        const headers = authHeader()
+        if (!headers) return null
+        const { data } = await axios.get(`${API_BASE_URL}/users/me/ratings`, {
+            headers
+        })
+        return data
+    }
+
+
+
     const deleteComment = (pubId, commentId) => {
         const headers = authHeader()
         return axios.delete(`${API_BASE_URL}/publications/${pubId}/comments/${commentId}`, { headers })
@@ -307,6 +337,20 @@ export const useAPIStore = defineStore('api', () => {
         return data || []
     }
 
+    const getPublicationHistory = async (id) => {
+        const headers = authHeader()
+        if (!headers) return []
+
+        const { data } = await axios.get(
+            `${API_BASE_URL}/publications/${encodeURIComponent(id)}/history`,
+            { headers }
+        )
+
+        return Array.isArray(data) ? data : []
+    }
+
+
+
     return {
         token,
         postLogin,
@@ -323,8 +367,10 @@ export const useAPIStore = defineStore('api', () => {
         recoverPassword,
         resetPassword,
         getMyPublications,
+        getMyRatings,
         getMyComments,
         getPublicationsByUser,
+        getPublicationHistory,
         updateMe,
         getMySubscribedTags, subscribeTags, unsubscribeTag, getUserSubscribedTags,
         getTypes, createType, deleteType,
@@ -332,8 +378,9 @@ export const useAPIStore = defineStore('api', () => {
         getPublicationComments,
         addRating, updateRating, deleteRating,
         getUserRating,
+        getMyActivity, getUserActivity,
         updateCommentVisibility,
-        createComment,updateComment, deleteComment,
+        createComment, updateComment, deleteComment,
         createPublication,
         updatePublicationVisibility,
         updatePublication
