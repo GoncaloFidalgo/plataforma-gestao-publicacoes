@@ -1,0 +1,66 @@
+### 1. LOGIN (Get Token)
+POST http://localhost:8080/academics/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "resp",
+  "password": "123"
+}
+
+> {%
+    client.global.set("auth_token", response.body);
+%}
+
+
+### 2. Subscribe Tag
+POST http://localhost:8080/academics/api/users/me/subscribed-tags
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "tag_id": ["Java"]
+}
+
+### 3. Unsubscribe Tag
+DELETE http://localhost:8080/academics/api/users/me/subscribed-tags/AI
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+
+### 4. Get Subscribed Tags
+GET http://localhost:8080/academics/api/users/me/subscribed-tags
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+### 5. Subscribe Tag AI and Java
+POST http://localhost:8080/academics/api/users/me/subscribed-tags
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "tag_id": ["AI","Java"]
+}
+
+
+### 6. LOGIN  Admin (Get Token)
+POST http://localhost:8080/academics/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "123"
+}
+
+> {%
+    client.global.set("auth_token", response.body);
+%}
+
+### 7. Get Subscribed Tags as Admin
+GET http://localhost:8080/academics/api/users/resp/subscribed-tags
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+### 8. Get All Tags
+GET http://localhost:8080/academics/api/tags
+Authorization: Bearer {{auth_token}}
+Accept: application/json

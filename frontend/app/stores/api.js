@@ -81,7 +81,7 @@ export const useAPIStore = defineStore('api', () => {
         const { data } = await axios.get(`${API_BASE_URL}/users/me/comments`, {
             headers
         })
-        return data 
+        return data
     }
 
 
@@ -149,7 +149,30 @@ export const useAPIStore = defineStore('api', () => {
             { headers }
         )
         return data
-    
+
+    }
+
+
+    const getMySubscribedTags = async () => {
+        const headers = authHeader()
+        if (!headers) return []
+        const { data } = await axios.get(`${API_BASE_URL}/users/me/subscribed-tags`, { headers })
+        return data
+    }
+
+    const subscribeTags = async (tagNames = []) => {
+        const headers = authHeader()
+        if (!headers) return null
+        const payload = { tag_id: tagNames }
+        const { data } = await axios.post(`${API_BASE_URL}/users/me/subscribed-tags`, payload, { headers })
+        return data
+    }
+
+    const unsubscribeTag = async (tagName) => {
+        const headers = authHeader()
+        if (!headers) return null
+        const { data } = await axios.delete(`${API_BASE_URL}/users/me/subscribed-tags/${encodeURIComponent(tagName)}`, { headers })
+        return data
     }
 
 
@@ -221,7 +244,7 @@ export const useAPIStore = defineStore('api', () => {
         return axios.delete(`${API_BASE_URL}/references/areas/${id}`, { headers })
     }
 
-// RATINGS
+    // RATINGS
     const addRating = (pubId, rating) => {
         const headers = authHeader()
         // Send as { rating: 5 }
@@ -275,6 +298,15 @@ export const useAPIStore = defineStore('api', () => {
         return axios.put(`${API_BASE_URL}/publications/${id}`, formData, { headers })
     }
 
+
+    const getUserSubscribedTags = async (id) => {
+        const headers = authHeader()
+        if (!headers) return []
+
+        const { data } = await axios.get(`${API_BASE_URL}/users/${encodeURIComponent(id)}/subscribed-tags`, { headers })
+        return data || []
+    }
+
     return {
         token,
         postLogin,
@@ -294,6 +326,7 @@ export const useAPIStore = defineStore('api', () => {
         getMyComments,
         getPublicationsByUser,
         updateMe,
+        getMySubscribedTags, subscribeTags, unsubscribeTag, getUserSubscribedTags,
         getTypes, createType, deleteType,
         getAreas, createArea, deleteArea,
         getPublicationComments,

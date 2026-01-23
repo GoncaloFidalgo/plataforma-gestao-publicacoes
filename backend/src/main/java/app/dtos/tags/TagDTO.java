@@ -1,4 +1,4 @@
-package app.dtos;
+package app.dtos.tags;
 
 import app.entities.Tag;
 import java.io.Serializable;

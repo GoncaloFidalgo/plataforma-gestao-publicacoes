@@ -152,7 +152,7 @@
 
 .dark .users-card {
   background: radial-gradient(circle at top left, rgba(248, 113, 22, 0.18), rgba(15, 23, 42, 0.98));
-  border-color: rgba(30, 64, 175, 0.45);
+  border-color: radial-gradient(circle at top left, rgba(248, 113, 22, 0.18), rgba(15, 23, 42, 0.98));
   box-shadow:
     0 24px 80px rgba(15, 23, 42, 0.90),
     0 0 0 1px rgba(15, 23, 42, 0.95);
