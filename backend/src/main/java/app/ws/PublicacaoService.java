@@ -28,6 +28,7 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+
 import java.util.logging.Logger;
 import java.io.File;
 import java.io.IOException;
@@ -37,17 +38,23 @@ import java.util.Map;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.stream.Collectors;
+
 import app.ejbs.OllamaBean;
+
 @Path("publications")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Authenticated
 public class PublicacaoService {
 
-    @EJB private PublicacaoBean publicacaoBean;
-    @EJB private UserBean userBean;
-    @EJB private RatingBean ratingBean;
-    @EJB private CommentBean commentBean;
+    @EJB
+    private PublicacaoBean publicacaoBean;
+    @EJB
+    private UserBean userBean;
+    @EJB
+    private RatingBean ratingBean;
+    @EJB
+    private CommentBean commentBean;
 
     @EJB
     private OllamaBean ollamaBean;
@@ -167,6 +174,7 @@ public class PublicacaoService {
         int i = filename.lastIndexOf('.');
         return (i > 0) ? filename.substring(i) : "";
     }
+
     @PUT
     @Path("{id}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -188,7 +196,8 @@ public class PublicacaoService {
 
             // 1. Metadata
             List<InputPart> metaParts = form.get("metadata");
-            if (metaParts == null || metaParts.isEmpty()) return Response.status(Response.Status.BAD_REQUEST).entity("metadata missing").build();
+            if (metaParts == null || metaParts.isEmpty())
+                return Response.status(Response.Status.BAD_REQUEST).entity("metadata missing").build();
 
             String metaJson = metaParts.get(0).getBodyAsString();
             ObjectMapper mapper = new ObjectMapper();
@@ -273,6 +282,7 @@ public class PublicacaoService {
         }
         return Response.ok(PublicacaoDTO.from(p)).build();
     }
+
     @GET
     public Response getAll(
             @QueryParam("tag") String tag,
@@ -297,6 +307,7 @@ public class PublicacaoService {
         List<Comment> comments = commentBean.findAll(id, hidden);
         return Response.ok(CommentDTO.from(comments)).build();
     }
+
     @POST
     @Path("{id}/comments")
     public Response createComment(@PathParam("id") Long id, CommentCreateDTO dto) {
@@ -371,39 +382,64 @@ public class PublicacaoService {
         return Response.ok(history).build();
     }
 
+//    @POST
+//    @Path("{id}/resumir")
+//    @RolesAllowed({"Administrator", "Responsavel", "Colaborador"})
+//    public Response gerarResumoAutomatico(@PathParam("id") Long id) {
+//        try {
+//            Publicacao publicacao = publicacaoBean.find(id);
+//            if (publicacao == null) {
+//                return Response.status(Response.Status.NOT_FOUND).build();
+//            }
+//
+//            StringBuilder conteudoCompleto = new StringBuilder();
+//            if (publicacao.getDescricao() != null) {
+//                conteudoCompleto.append(publicacao.getDescricao()).append("\n");
+//            }
+//
+//            if (publicacao.getFilename() != null && publicacao.getFilename().toLowerCase().endsWith(".pdf")) {
+//                String pdfText = extractContentFromPdf(publicacao.getFilename());
+//                if (pdfText != null && !pdfText.isBlank()) {
+//                    conteudoCompleto.append("\n--- Excerto do PDF ---\n").append(pdfText);
+//                }
+//            }
+//
+//            String textoFinal = conteudoCompleto.toString();
+//
+//            if (textoFinal.isBlank()) {
+//                return Response.status(Response.Status.BAD_REQUEST)
+//                        .entity("{\"mensagem\": \"Não há conteúdo suficiente (descrição ou PDF) para gerar um resumo.\"}")
+//                        .build();
+//            }
+//
+//            String resumoGerado = ollamaBean.generateSummary(publicacao.getTitulo(), textoFinal);
+//
+//            publicacaoBean.updateResumo(id, resumoGerado);
+//
+//            return Response.ok()
+//                    .entity("{\"resumo\": \"" + resumoGerado.replace("\"", "\\\"").replace("\n", " ") + "\"}")
+//                    .build();
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+//                    .entity("{\"mensagem\": \"Erro ao processar resumo: " + e.getMessage() + "\"}")
+//                    .build();
+//        }
+//    }
+
     @POST
     @Path("{id}/resumir")
     @RolesAllowed({"Administrator", "Responsavel", "Colaborador"})
     public Response gerarResumoAutomatico(@PathParam("id") Long id) {
         try {
-            Publicacao publicacao = publicacaoBean.find(id);
-            if (publicacao == null) {
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
+            String resumoGerado = publicacaoBean.generateSummary(id);
 
-            StringBuilder conteudoCompleto = new StringBuilder();
-            if (publicacao.getDescricao() != null) {
-                conteudoCompleto.append(publicacao.getDescricao()).append("\n");
-            }
-
-            if (publicacao.getFilename() != null && publicacao.getFilename().toLowerCase().endsWith(".pdf")) {
-                String pdfText = extractContentFromPdf(publicacao.getFilename());
-                if (pdfText != null && !pdfText.isBlank()) {
-                    conteudoCompleto.append("\n--- Excerto do PDF ---\n").append(pdfText);
-                }
-            }
-
-            String textoFinal = conteudoCompleto.toString();
-
-            if (textoFinal.isBlank()) {
+            if (resumoGerado.isBlank()) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity("{\"mensagem\": \"Não há conteúdo suficiente (descrição ou PDF) para gerar um resumo.\"}")
                         .build();
             }
-
-            String resumoGerado = ollamaBean.generateSummary(publicacao.getTitulo(), textoFinal);
-
-            publicacaoBean.updateResumo(id, resumoGerado);
 
             return Response.ok()
                     .entity("{\"resumo\": \"" + resumoGerado.replace("\"", "\\\"").replace("\n", " ") + "\"}")
@@ -420,78 +456,72 @@ public class PublicacaoService {
     /**
      * Método auxiliar para extrair texto do PDF
      */
-    private String extractContentFromPdf(String filename) {
-        try {
-            java.nio.file.Path filePath = Paths.get(UPLOAD_DIR, filename);
-            File file = filePath.toFile();
+//    private String extractContentFromPdf(String filename) {
+//        try {
+//            java.nio.file.Path filePath = Paths.get(UPLOAD_DIR, filename);
+//            File file = filePath.toFile();
+//
+//            if (!file.exists()) {
+//                logger.warning("Ficheiro PDF não encontrado para resumo: " + filename);
+//                return null;
+//            }
+//
+//            try (PDDocument document = PDDocument.load(file)) {
+//                PDFTextStripper stripper = new PDFTextStripper();
+//
+//
+//                stripper.setStartPage(1);
+//                stripper.setEndPage(5);
+//
+//                String text = stripper.getText(document);
+//
+//                if (text.length() > 4000) {
+//                    text = text.substring(0, 4000) + "... [texto truncado]";
+//                }
+//                return text;
+//            }
+//        } catch (IOException e) {
+//            logger.severe("Erro ao ler PDF (" + filename + "): " + e.getMessage());
+//            return null;
+//        }
+//    }
+    @GET
+    @Path("{id}/ratings")
+    public Response getRatings(@PathParam("id") Long id) {
+        Publicacao p = publicacaoBean.find(id);
+        if (p == null) return Response.status(Response.Status.NOT_FOUND).build();
 
-            if (!file.exists()) {
-                logger.warning("Ficheiro PDF não encontrado para resumo: " + filename);
-                return null;
-            }
-
-            try (PDDocument document = PDDocument.load(file)) {
-                PDFTextStripper stripper = new PDFTextStripper();
-
-
-                stripper.setStartPage(1);
-                stripper.setEndPage(5);
-
-                String text = stripper.getText(document);
-
-                if (text.length() > 4000) {
-                    text = text.substring(0, 4000) + "... [texto truncado]";
-                }
-                return text;
-            }
-        } catch (IOException e) {
-            logger.severe("Erro ao ler PDF (" + filename + "): " + e.getMessage());
-            return null;
-        }
+        List<PublicacaoDTO.RatingDTO> ratings = p.getRatings().stream()
+                .map(PublicacaoDTO.RatingDTO::from)
+                .collect(Collectors.toList());
+        return Response.ok(ratings).build();
     }
 
+    @POST
+    @Path("{id}/ratings")
+    @RolesAllowed({"Colaborador", "Responsavel", "Administrator"})
+    public Response addRating(@PathParam("id") Long id, RatingRequestDTO dto) {
+        try {
+            String username = securityContext.getUserPrincipal().getName();
 
+            // Validar input (1-5)
+            if (dto.getRating() < 1 || dto.getRating() > 5) {
+                return Response.status(Response.Status.BAD_REQUEST).entity("Rating deve ser entre 1 e 5").build();
+            }
 
+            double newAverage = ratingBean.create(id, username, dto.getRating());
+            int count = ratingBean.getCount(id);
 
+            return Response.status(Response.Status.CREATED)
+                    .entity(new RatingResponseDTO(newAverage, count))
+                    .build();
 
-
-   @GET
-   @Path("{id}/ratings")
-   public Response getRatings(@PathParam("id") Long id) {
-       Publicacao p = publicacaoBean.find(id);
-       if (p == null) return Response.status(Response.Status.NOT_FOUND).build();
-
-       List<PublicacaoDTO.RatingDTO> ratings = p.getRatings().stream()
-               .map(PublicacaoDTO.RatingDTO::from)
-               .collect(Collectors.toList());
-       return Response.ok(ratings).build();
-   }
-
-   @POST
-   @Path("{id}/ratings")
-   @RolesAllowed({"Colaborador", "Responsavel", "Administrator"})
-   public Response addRating(@PathParam("id") Long id, RatingRequestDTO dto) {
-       try {
-           String username = securityContext.getUserPrincipal().getName();
-
-           // Validar input (1-5)
-           if (dto.getRating() < 1 || dto.getRating() > 5) {
-               return Response.status(Response.Status.BAD_REQUEST).entity("Rating deve ser entre 1 e 5").build();
-           }
-
-           double newAverage = ratingBean.create(id, username, dto.getRating());
-           int count = ratingBean.getCount(id);
-
-           return Response.status(Response.Status.CREATED)
-                   .entity(new RatingResponseDTO(newAverage, count))
-                   .build();
-
-       } catch (MyEntityExistsException e) {
-           return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
-       } catch (MyEntityNotFoundException e) {
-           return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
-       }
-   }
+        } catch (MyEntityExistsException e) {
+            return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        }
+    }
 
     // EP48 - Atualizar Rating (PATCH)
     @PATCH
@@ -540,6 +570,7 @@ public class PublicacaoService {
             return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
         }
     }
+
     @GET
     @Path("{id}/ratings/me")
     public Response getMyRating(@PathParam("id") Long id) {
@@ -552,6 +583,7 @@ public class PublicacaoService {
 
         return Response.ok(PublicacaoDTO.RatingDTO.from(rating)).build();
     }
+
     private String getFileName(MultivaluedMap<String, String> header) {
         String[] contentDisposition = header.getFirst("Content-Disposition").split(";");
         for (String filename : contentDisposition) {
@@ -562,6 +594,7 @@ public class PublicacaoService {
         }
         return "unknown";
     }
+
     @PATCH
     @Path("{id}/visibility")
     @RolesAllowed({"Colaborador", "Responsavel", "Administrator"})

@@ -3,12 +3,15 @@ package app.ejbs;
 import app.entities.*;
 import app.exceptions.MyConstraintViolationException;
 import app.exceptions.MyEntityNotFoundException;
+import app.ws.PublicacaoService;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.validation.ConstraintViolationException;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.hibernate.Hibernate;
 
 import java.io.File;
@@ -18,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.logging.Logger;
 
 import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
@@ -27,10 +31,11 @@ public class PublicacaoBean {
 
     @PersistenceContext
     private EntityManager entityManager;
-
+    @EJB
+    private OllamaBean ollamaBean;
     @EJB
     private EmailBean emailBean;
-
+    private static final Logger logger = Logger.getLogger(PublicacaoService.class.getName());
     private static final String UPLOAD_DIR = System.getProperty("java.io.tmpdir") + "/publications/";
 
     public Publicacao create(String titulo, Long tipoId, List<String> authorUsernames, Long areaId, String descricao, InputStream fileContent, String extension, List<String> tagNames, String creatorUsername) throws MyConstraintViolationException, MyEntityNotFoundException, IOException {
@@ -78,30 +83,20 @@ public class PublicacaoBean {
                     Tag tag = entityManager.find(Tag.class, tagName);
                     if (tag != null) {
                         tagsToSet.add(tag);
+                        if (!tag.getSubscribers().isEmpty()) {
+                            emailBean.notifyTagSubscribers(
+                                    tag.getSubscribers(),
+                                    tag.getName(),
+                                    "Nova publicação",
+                                    publicacao.getTitulo(),
+                            );
+                        }
                     }
                 }
                 publicacao.setTags(tagsToSet);
             }
-
             entityManager.persist(publicacao);
-
-            // enviar notificações
-            if (tagNames != null && !tagNames.isEmpty()) {
-                for (Tag tag : publicacao.getTags()) {
-                    if (!tag.getSubscribers().isEmpty()) {
-                        String publicationUrl = "http://localhost:4200/publications/" + publicacao.getId();
-
-                        emailBean.notifyTagSubscribersWithUrl(
-                                tag.getSubscribers(),
-                                tag.getName(),
-                                "Nova publicacao",
-                                publicacao.getTitulo(),
-                                publicationUrl
-                        );
-                    }
-                }
-            }
-
+            this.generateSummary(publicacao.getId());
             return publicacao;
         } catch (ConstraintViolationException e) {
             throw new MyConstraintViolationException(e);
@@ -281,6 +276,61 @@ public class PublicacaoBean {
         }
 
         entityManager.remove(p);
+    }
+    public String generateSummary(Long id) throws MyEntityNotFoundException {
+        Publicacao publicacao = find(id);
+        if (publicacao == null) {
+            throw new MyEntityNotFoundException("Publicacao not found.");
+        }
+
+        StringBuilder conteudoCompleto = new StringBuilder();
+        if (publicacao.getDescricao() != null) {
+            conteudoCompleto.append(publicacao.getDescricao()).append("\n");
+        }
+
+        if (publicacao.getFilename() != null && publicacao.getFilename().toLowerCase().endsWith(".pdf")) {
+            String pdfText = extractContentFromPdf(publicacao.getFilename());
+            if (pdfText != null && !pdfText.isBlank()) {
+                conteudoCompleto.append("\n--- Excerto do PDF ---\n").append(pdfText);
+            }
+        }
+
+        String textoFinal = conteudoCompleto.toString();
+
+        if (textoFinal.isBlank()) {
+            return null;
+        }
+
+        String resumoGerado = ollamaBean.generateSummary(publicacao.getTitulo(), textoFinal);
+
+        // Update entity
+        publicacao.setResumo(resumoGerado);
+
+        return resumoGerado;
+    }
+    private String extractContentFromPdf(String filename) {
+        File file = new File(UPLOAD_DIR, filename);
+        if (!file.exists()){
+            logger.warning("Ficheiro PDF não encontrado para resumo: " + filename);
+            return null;
+        }
+
+        try (PDDocument document = PDDocument.load(file)) {
+            PDFTextStripper stripper = new PDFTextStripper();
+
+            stripper.setStartPage(1);
+            stripper.setEndPage(5);
+
+            String text = stripper.getText(document);
+
+            if (text.length() > 4000) {
+                text = text.substring(0, 4000) + "... [texto truncado]";
+            }
+            return text;
+        } catch (IOException e) {
+            System.err.println("Error reading PDF: " + e.getMessage());
+            return null;
+        }
     }
 
 
