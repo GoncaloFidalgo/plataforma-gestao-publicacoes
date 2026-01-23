@@ -3,12 +3,12 @@ package app.ws;
 import app.dtos.ActivityDTO;
 import app.dtos.UserDTO;
 import app.dtos.publication.PublicacaoDTO;
+import app.dtos.rating.UserRatingsResponseDTO;
 import app.dtos.tags.TagDTO;
 import app.dtos.tags.TagSubscriptionDTO;
-import app.ejbs.PublicacaoBean;
-import app.ejbs.TagBean;
-import app.ejbs.UserBean;
+import app.ejbs.*;
 import app.entities.Publicacao;
+import app.entities.Rating;
 import app.exceptions.MyConstraintViolationException;
 import app.exceptions.MyEntityExistsException;
 import app.exceptions.MyEntityNotFoundException;
@@ -21,7 +21,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import app.ejbs.CommentBean;
 import app.entities.Comment;
 import app.dtos.comments.CommentDTO;
 
@@ -47,6 +46,9 @@ public class MeService {
 
     @EJB
     private TagBean tagBean;
+
+    @EJB
+    private RatingBean ratingBean;
 
     @Context
     private SecurityContext securityContext;
@@ -211,6 +213,31 @@ public class MeService {
         } catch (MyEntityNotFoundException e) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(e.getMessage())
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/ratings")
+    @Authenticated
+    public Response getMyRatings(@Context SecurityContext securityContext) {
+        try {
+            String username = securityContext.getUserPrincipal().getName();
+
+            List<Rating> ratings = ratingBean.findRatingsWithPublicationsByUser(username);
+
+            UserRatingsResponseDTO response = UserRatingsResponseDTO.from(ratings);
+
+            return Response.ok(response).build();
+
+        } catch (MyEntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("{\"mensagem\": \"" + e.getMessage() + "\"}")
+                    .build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"mensagem\": \"Erro ao obter ratings pessoais\"}")
                     .build();
         }
     }
