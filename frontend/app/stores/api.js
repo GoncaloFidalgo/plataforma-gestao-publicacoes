@@ -284,6 +284,15 @@ export const useAPIStore = defineStore('api', () => {
         return axios.patch(`${API_BASE_URL}/publications/${pubId}/comments/${commentId}`, data, { headers })
     }
 
+    const getMyRatings = async () => {
+        const headers = authHeader()
+        if (!headers) return null
+        const { data } = await axios.get(`${API_BASE_URL}/users/me/ratings`, {
+            headers
+        })
+        return data 
+    }
+
     const deleteComment = (pubId, commentId) => {
         const headers = authHeader()
         return axios.delete(`${API_BASE_URL}/publications/${pubId}/comments/${commentId}`, { headers })
@@ -313,6 +322,7 @@ export const useAPIStore = defineStore('api', () => {
         recoverPassword,
         resetPassword,
         getMyPublications,
+        getMyRatings,
         getMyComments,
         getPublicationsByUser,
         updateMe,
