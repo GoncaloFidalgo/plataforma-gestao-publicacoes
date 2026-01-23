@@ -78,22 +78,30 @@ public class PublicacaoBean {
                     Tag tag = entityManager.find(Tag.class, tagName);
                     if (tag != null) {
                         tagsToSet.add(tag);
-                        if (!tag.getSubscribers().isEmpty()) {
-                            emailBean.notifyTagSubscribers(
-                                    tag.getSubscribers(),
-                                    tag.getName(),
-                                    "Nova publicação",
-                                    publicacao.getTitulo(),
-                                    publicacao.getId()
-                            );
-                        }
                     }
                 }
                 publicacao.setTags(tagsToSet);
             }
 
-
             entityManager.persist(publicacao);
+
+            // enviar notificações
+            if (tagNames != null && !tagNames.isEmpty()) {
+                for (Tag tag : publicacao.getTags()) {
+                    if (!tag.getSubscribers().isEmpty()) {
+                        String publicationUrl = "http://localhost:4200/publications/" + publicacao.getId();
+
+                        emailBean.notifyTagSubscribersWithUrl(
+                                tag.getSubscribers(),
+                                tag.getName(),
+                                "Nova publicacao",
+                                publicacao.getTitulo(),
+                                publicationUrl
+                        );
+                    }
+                }
+            }
+
             return publicacao;
         } catch (ConstraintViolationException e) {
             throw new MyConstraintViolationException(e);
@@ -228,14 +236,14 @@ public class PublicacaoBean {
             // 3. Update entity reference
             p.setFilename(newFileName);
         }
+
         for (Tag tag : p.getTags()) {
             if (!tag.getSubscribers().isEmpty()) {
                 emailBean.notifyTagSubscribers(
-                        tag.getSubscribers(),
-                        tag.getName(),
-                        "Publicação editada",
-                        p.getTitulo(),
-                        p.getId()
+                    tag.getSubscribers(),
+                    tag.getName(),
+                    "Publicacao editada",
+                    p.getTitulo()
                 );
             }
         }

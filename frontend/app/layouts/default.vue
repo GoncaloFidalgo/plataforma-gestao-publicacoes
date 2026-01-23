@@ -179,6 +179,12 @@ const managementLinks = computed<NavigationMenuItem[]>(() => {
     icon: 'i-heroicons-chat-bubble-left-right',
     to: '/me/comments'      
   })
+  
+  links.push({
+    label: 'My Ratings',
+    icon: 'i-heroicons-star',
+    to: '/me/ratings'      
+  })
 
   links.push({
     label: 'My Tags',
