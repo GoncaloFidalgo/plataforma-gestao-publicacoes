@@ -5,12 +5,9 @@
             <!-- Header -->
             <div class="flex items-start justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-                        My Publications
+                    <h1 class="text-2xl font-medium text-gray-900 dark:text-white">
+                        Publicações do <strong>{{ route.params.username }}</strong>
                     </h1>
-                    <p class="text-sm text-gray-500 mt-1">
-                        Publications you created or co-authored
-                    </p>
                 </div>
 
             </div>
