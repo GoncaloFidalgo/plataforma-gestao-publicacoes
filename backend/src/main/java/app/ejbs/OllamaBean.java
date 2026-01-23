@@ -2,7 +2,10 @@ package app.ejbs;
 
 import app.dtos.OllamaRequest;
 import app.dtos.OllamaResponse;
+import app.entities.Publicacao;
+import app.exceptions.MyEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
+import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
@@ -20,7 +23,8 @@ public class OllamaBean {
     private static final Logger logger = Logger.getLogger(OllamaBean.class.getName());
     private String ollamaUrl;
     private String ollamaModel;
-
+    @EJB
+    private PublicacaoBean publicacaoBean;
     @PostConstruct
     public void init() {
         ollamaUrl = System.getenv("OLLAMA_API_URL");
@@ -30,7 +34,7 @@ public class OllamaBean {
         if (ollamaModel == null) ollamaModel = "tinyllama";
     }
 
-    // ADICIONE ESTA ANOTAÇÃO AQUI
+     //ADICIONE ESTA ANOTAÇÃO AQUI
     @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
     public String generateSummary(String titulo, String descricao) {
         String promptText = "Resuma o seguinte texto académico em português de Portugal (max 3 linhas). Título: "
@@ -60,4 +64,5 @@ public class OllamaBean {
             return "Erro de comunicação com o serviço de IA.";
         }
     }
+
 }
