@@ -31,13 +31,13 @@ public class OllamaBean {
         if (ollamaUrl == null) ollamaUrl = "http://ollama:11434/api/generate";
 
         ollamaModel = System.getenv("OLLAMA_MODEL");
-        if (ollamaModel == null) ollamaModel = "tinyllama";
+        if (ollamaModel == null) ollamaModel = "llama3.2:3b";
     }
 
      //ADICIONE ESTA ANOTAÇÃO AQUI
     @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
     public String generateSummary(String titulo, String descricao) {
-        String promptText = "Resuma o seguinte texto académico em português de Portugal (max 3 linhas). Título: "
+        String promptText = "Cria um resumo, no máximo 5 linhas, conciso e informativo em português de Portugal, destacando os pontos principais, metodologia (se aplicável) e conclusões relevantes. Título: "
                 + titulo + ". Conteúdo: " + descricao;
 
         OllamaRequest requestBody = new OllamaRequest(ollamaModel, promptText);

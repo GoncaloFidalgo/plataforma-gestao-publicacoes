@@ -58,7 +58,7 @@
 
                 <div class="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-400">
                   <span v-if="h.editor">👤 {{ h.editor }}</span>
-                  <span v-if="h.modifiedAt">📅 {{ formatDateTime(h.modifiedAt) }}</span>
+                  <span v-if="h.modifiedAt">📅 {{ h.modifiedAt }}</span>
                 </div>
               </div>
 
@@ -109,12 +109,4 @@ const fetchHistory = async () => {
 }
 
 onMounted(fetchHistory)
-
-const formatDateTime = (iso) => {
-  try {
-    return new Date(iso).toLocaleString('pt-PT')
-  } catch {
-    return iso
-  }
-}
 </script>

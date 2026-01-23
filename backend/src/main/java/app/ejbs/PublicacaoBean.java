@@ -88,7 +88,7 @@ public class PublicacaoBean {
                                     tag.getSubscribers(),
                                     tag.getName(),
                                     "Nova publicação",
-                                    publicacao.getTitulo(),
+                                    publicacao.getTitulo()
                             );
                         }
                     }

@@ -141,6 +141,7 @@ public class PublicacaoDTO implements Serializable {
     public static class HistoricoEdicaoDTO implements Serializable {
         public String description;
         public String editor;
+        @JsonFormat(pattern = "dd/MM/yyyy")
         public LocalDateTime modifiedAt;
         public static HistoricoEdicaoDTO from(HistoricoEdicao h) {
             HistoricoEdicaoDTO d = new HistoricoEdicaoDTO();
