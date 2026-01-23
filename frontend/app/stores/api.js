@@ -265,6 +265,16 @@ export const useAPIStore = defineStore('api', () => {
         const headers = authHeader()
         return axios.delete(`${API_BASE_URL}/publications/${pubId}/comments/${commentId}`, { headers })
     }
+    const updatePublicationVisibility = (id, hidden) => {
+        const headers = authHeader()
+        return axios.patch(`${API_BASE_URL}/publications/${id}/visibility`, { hidden }, { headers })
+    }
+    const updatePublication = (id, formData) => {
+        const headers = authHeader()
+        if (!headers) throw new Error("No token")
+        return axios.put(`${API_BASE_URL}/publications/${id}`, formData, { headers })
+    }
+
     return {
         token,
         postLogin,
@@ -291,6 +301,8 @@ export const useAPIStore = defineStore('api', () => {
         getUserRating,
         updateCommentVisibility,
         createComment,updateComment, deleteComment,
-        createPublication
+        createPublication,
+        updatePublicationVisibility,
+        updatePublication
     }
 })

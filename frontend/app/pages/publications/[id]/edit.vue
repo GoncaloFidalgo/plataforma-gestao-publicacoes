@@ -2,22 +2,26 @@
   <div class="max-w-3xl mx-auto py-8 space-y-6">
 
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Upload Publication</h1>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Edit Publication</h1>
       <UButton
           icon="i-heroicons-arrow-left"
           color="gray"
           variant="ghost"
           label="Back"
-          to="/publications"
+          @click="$router.back()"
       />
     </div>
 
-    <UCard>
+    <div v-if="loadingData" class="flex justify-center py-10">
+      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gray-400" />
+    </div>
+
+    <UCard v-else>
       <UForm :schema="schema" :state="state" @submit="handleSubmit" class="space-y-6">
 
         <!-- Title -->
         <UFormField label="Title" name="titulo" required>
-          <UInput v-model="state.titulo" placeholder="e.g. Introduction to AI" size="lg" class="w-full"/>
+          <UInput v-model="state.titulo" size="lg" class="w-full" />
         </UFormField>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -26,9 +30,15 @@
             <USelectMenu
                 v-model="state.tipo"
                 :items="typeOptions"
+                option-attribute="name"
                 placeholder="Select type"
                 class="w-full"
-            />
+            >
+              <template #label>
+                <span v-if="state.tipo" class="truncate">{{ state.tipo.name }}</span>
+                <span v-else class="text-gray-500">Select type</span>
+              </template>
+            </USelectMenu>
           </UFormField>
 
           <!-- Scientific Area -->
@@ -36,9 +46,16 @@
             <USelectMenu
                 v-model="state.areaCientifica"
                 :items="areaOptions"
+                v-bind="state.areaCientifica"
+                option-attribute="name"
                 placeholder="Select area"
                 class="w-full"
-            />
+            >
+              <template #label>
+                <span v-if="state.areaCientifica" class="truncate">{{ state.areaCientifica.name }}</span>
+                <span v-else class="text-gray-500">Select area</span>
+              </template>
+            </USelectMenu>
           </UFormField>
         </div>
         <UFormField label="Authors" name="autores">
@@ -61,18 +78,27 @@
               multiple
               searchable
               class="w-full"
-          />
+          >
+            <template #label>
+              <span v-if="state.tags.length" class="truncate">{{ state.tags.join(', ') }}</span>
+              <span v-else class="text-gray-500">Select tags</span>
+            </template>
+          </USelectMenu>
         </UFormField>
 
         <!-- Description -->
         <UFormField label="Description" name="descricao" required>
-          <UTextarea v-model="state.descricao" placeholder="Enter a brief abstract or description..." :rows="4"
-                     class="w-full"/>
+          <UTextarea v-model="state.descricao" :rows="4" class="w-full" />
         </UFormField>
 
-        <!-- File Upload -->
-        <UFormField label="File (PDF or ZIP)" name="file" required>
-          <div class="flex items-center gap-4">
+        <!-- File Upload (Optional on Edit) -->
+        <UFormField label="Replace File (Optional)" name="file">
+          <div class="space-y-2">
+            <div v-if="existingFileName" class="text-sm text-gray-500 flex items-center gap-2">
+              <UIcon name="i-heroicons-document" class="w-4 h-4" />
+              Current file: <span class="font-medium text-gray-700 dark:text-gray-300">{{ existingFileName }}</span>
+            </div>
+
             <input
                 type="file"
                 ref="fileInput"
@@ -91,13 +117,13 @@
 
         <!-- Options -->
         <UFormField name="hidden">
-          <UCheckbox v-model="state.hidden" label="Keep this publication hidden (Private)"/>
+          <UCheckbox v-model="state.hidden" label="Keep this publication hidden (Private)" />
         </UFormField>
 
         <!-- Actions -->
         <div class="flex justify-end gap-3 pt-4">
-          <UButton label="Cancel" color="gray" variant="ghost" to="/publications"/>
-          <UButton type="submit" label="Upload Publication" color="primary" :loading="uploading"/>
+          <UButton label="Cancel" color="gray" variant="ghost" @click="$router.back()" />
+          <UButton type="submit" label="Save Changes" color="primary" :loading="saving" />
         </div>
 
       </UForm>
@@ -106,18 +132,23 @@
 </template>
 
 <script setup>
-import {z} from 'zod'
+import { z } from 'zod'
+import { useAPIStore } from '~/stores/api.js'
 
+const route = useRoute()
+const router = useRouter()
+const apiStore = useAPIStore()
 const pubStore = usePublicationStore()
 const tagStore = useTagStore()
-const referenceStore = useReferenceStore()
+const refStore = useReferenceStore()
 const toast = useToast()
 const userStore = useUserStore()
 
-// State
-const uploading = ref(false)
+const pubId = route.params.id
+const loadingData = ref(true)
+const saving = ref(false)
 const fileError = ref('')
-const fileInput = ref(null)
+const existingFileName = ref('')
 
 const state = reactive({
   titulo: '',
@@ -130,45 +161,72 @@ const state = reactive({
   autores: [],
 })
 
-const tagOptions = computed(() => {
-  return tagStore.tags
-      .filter(t => !t.hidden)
-      .map(t => t.name)
-})
-
+// Data Sources
 const typeOptions = computed(() => {
-  return referenceStore.types
+  return refStore.types
       .map(t => ({
         label: t.name,
         value: t.id,
       }))
 })
 const areaOptions = computed(() => {
-  return referenceStore.areas
+  return refStore.areas
       .map(t => ({
         label: t.name,
         value: t.id,
       }))
 })
+const tagOptions = computed(() => tagStore.tags.map(t => t.name))
 const authorOptions = computed(() => {
   return userStore.users.map(u => ({
     label: `${u.name} (${u.username})`,
     value: u.username
   }))
 })
+onMounted(async () => {
+  try {
+    // 1. Load Reference Data
+    if (tagStore.tags.length === 0) await tagStore.fetchTags()
+    await refStore.fetchTypes()
+    await refStore.fetchAreas()
+    await userStore.fetchUsers()
+    // 2. Load Publication Details
+    const pub = await apiStore.getPublications().then(list => list.find(p => p.id == pubId))
 
-onMounted(() => {
-  tagStore.fetchTags()
-  referenceStore.fetchTypes()
-  referenceStore.fetchAreas()
-  userStore.fetchUsers()
+    if (!pub) {
+      toast.add({ title: 'Error', description: 'Publication not found', color: 'red' })
+      router.push('/me/publications')
+      return
+    }
+
+    // 3. Populate State
+    state.titulo = pub.titulo
+    state.descricao = pub.descricao
+    state.hidden = pub.hidden
+    state.tags = pub.tags || []
+    existingFileName.value = pub.file || 'Existing File'
+
+    state.tipo = typeOptions.value.find(o => o.label === pub.tipo) || null
+    state.autores = authorOptions.value.filter(opt =>
+        pub.autores.some(a => a.username === opt.value)
+    )
+
+    state.areaCientifica = areaOptions.value.find(o => o.label === pub.areaCientifica) || null
+
+  } catch (error) {
+    console.error(error)
+    toast.add({ title: 'Error', description: 'Failed to load publication data', color: 'red' })
+  } finally {
+    loadingData.value = false
+  }
 })
 
+// Validation Schema
 const schema = z.object({
-  titulo: z.string().min(3, 'Title must be at least 3 characters'),
+  titulo: z.string().min(3, 'Title too short'),
   tipo: z.any().refine(val => val && val.value, 'Type is required'),
   areaCientifica: z.any().refine(val => val && val.value, 'Scientific area is required'),
-  descricao: z.string().min(10, 'Description must be at least 10 characters')
+  descricao: z.string().min(10, 'Description too short')
 })
 
 const handleFileChange = (event) => {
@@ -178,18 +236,9 @@ const handleFileChange = (event) => {
     return
   }
 
-  // Validate extension
   const validTypes = ['application/pdf', 'application/zip', 'application/x-zip-compressed']
   if (!validTypes.includes(file.type) && !file.name.endsWith('.pdf') && !file.name.endsWith('.zip')) {
     fileError.value = 'Only PDF or ZIP files are allowed.'
-    state.file = null
-    event.target.value = ''
-    return
-  }
-
-  // Validate size
-  if (file.size > 10 * 1024 * 1024) {
-    fileError.value = 'File size exceeds 10MB.'
     state.file = null
     event.target.value = ''
     return
@@ -200,30 +249,24 @@ const handleFileChange = (event) => {
 }
 
 const handleSubmit = async () => {
-  if (!state.file) {
-    fileError.value = 'Please select a file to upload.'
-    return
-  }
-
-  uploading.value = true
+  saving.value = true
   try {
-
-    await pubStore.create({
+    await pubStore.update(pubId, {
       ...state,
       tipo: state.tipo.value,
       areaCientifica: state.areaCientifica.value,
       autores: state.autores.map(a => a.value)
     })
 
-    toast.add({title: 'Success', description: 'Publication uploaded successfully!', color: 'green'})
-    await navigateTo('/publications')
+    toast.add({ title: 'Success', description: 'Publication updated!', color: 'green' })
+    router.back()
 
   } catch (error) {
     console.log(error)
-    const msg = error.response?.data?.mensagem || error.response?.data || 'Failed to upload'
-    toast.add({title: 'Error', description: msg, color: 'red'})
+    const msg = error.response?.data?.mensagem || error.response?.data || 'Failed to update'
+    toast.add({ title: 'Error', description: msg, color: 'red' })
   } finally {
-    uploading.value = false
+    saving.value = false
   }
 }
 </script>

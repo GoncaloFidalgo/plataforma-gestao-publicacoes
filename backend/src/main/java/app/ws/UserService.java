@@ -46,7 +46,6 @@ public class UserService {
     //region GET
     @GET
     @Path("/")
-    @RolesAllowed({"Administrator"})
     public Response getAllUsers() {
         try {
             var users = userBean.findAll();

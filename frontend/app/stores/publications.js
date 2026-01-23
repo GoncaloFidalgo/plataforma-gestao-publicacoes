@@ -133,7 +133,38 @@ export const usePublicationStore = defineStore('publications', () => {
         return await fetchComments(pubId, currentFilter)
     }
 
+    const togglePublicationVisibility = async (id, currentHidden) => {
+        await apiStore.updatePublicationVisibility(id, !currentHidden)
+        await fetchPublications()
+    }
+    const update = async (id, form) => {
+        const formData = new FormData()
 
+        // 1. Metadata
+        const metadata = {
+            titulo: form.titulo,
+            tipoId: form.tipo, // ID
+            areaId: form.areaCientifica, // ID
+            descricao: form.descricao,
+            tags: form.tags,
+            hidden: form.hidden,
+            autores: Array.isArray(form.autores) ? form.autores : [],
+        }
+        formData.append('metadata', JSON.stringify(metadata))
+
+        if (form.file) {
+            formData.append('file', form.file)
+        }
+
+        console.log('Updating publication...')
+        await apiStore.updatePublication(id, formData)
+
+        console.log('Fetching publications...')
+        await fetchPublications()
+
+        //console.log('Fetching my publications...')
+        //await fetchMyPublications()
+    }
     return {
         publications,
         loading,
@@ -144,6 +175,8 @@ export const usePublicationStore = defineStore('publications', () => {
         addRating, updateRating, deleteRating,fetchUserRating,
         toggleCommentVisibility,
         fetchMyPublications,
-        fetchPublicationsByUser
+        fetchPublicationsByUser,
+        togglePublicationVisibility,
+        update
     }
 })
